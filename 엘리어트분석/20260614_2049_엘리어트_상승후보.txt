@@ -1,0 +1,10 @@
+# Elliott Wave Scanner (완전 개편판 - 진짜 이론 기반)
+# 생성: 2026-06-14 20:49:24
+# 규칙: Wave2 38.2-78.6%, 신선한 breakout (9봉 이내), W3 not shortest, overlap 금지, volume/candle 확인
+# 후보 수: 1
+
+
+ 1. ICPUSDT      |  91/100 | Vol $16.4M
+    현재가: 2.4680 | RSI 67.84452296821788
+    High Conviction Wave 3 (강력)
+    이유: Wave 2 유효 조정 60.3% (38.2~78.6% 규칙 준수) | 이상적 50-61.8% 조정 | Wave 1 고점 돌파 (경과 4봉) | Wave 3 leg가 Wave 1 대비 강함 (이론 준수)
