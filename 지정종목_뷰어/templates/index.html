@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지정종목 엘리어트 분석 뷰어</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Malgun Gothic', system-ui, sans-serif; }
+        .score-bar { transition: width 0.6s ease; }
+        .coin-card { transition: transform 0.15s, box-shadow 0.15s; }
+        .coin-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+        .coin-card.active { ring: 2px; border-color: #38bdf8; }
+        #detail-panel { max-height: calc(100vh - 2rem); overflow-y: auto; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 좌측: 종목 목록 -->
+        <aside class="w-full md:w-[420px] lg:w-[460px] flex-shrink-0 border-r border-slate-800 flex flex-col bg-slate-900/50">
+            <header class="p-4 border-b border-slate-800">
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-wave-square text-sky-400"></i>
+                    지정종목 엘리어트 뷰어
+                </h1>
+                <p class="text-xs text-slate-400 mt-1">BTC · LTC · XRP · ADA · BCH · XLM · ZEC · ZEN · NIGHT · CONX</p>
+            </header>
+
+            <div class="p-4 space-y-3 border-b border-slate-800">
+                {% if allow_scan %}
+                <button id="btn-scan" onclick="runScan()"
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i>
+                    <span id="scan-text">지금 분석 실행</span>
+                </button>
+                {% else %}
+                <div class="w-full py-3 bg-slate-800 rounded-xl text-center text-xs text-slate-400">
+                    <i class="fa-solid fa-clock text-sky-400"></i>
+                    자동 갱신 모드 (GitHub Actions 4시간마다)
+                </div>
+                {% endif %}
+                <div id="status-line" class="text-xs text-slate-400 text-center"></div>
+                <div class="flex items-center justify-between text-xs">
+                    <span id="last-updated" class="text-slate-400">불러오는 중...</span>
+                    <select id="report-select" onchange="loadReport(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs max-w-[180px]">
+                        <option value="">이전 리포트...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 상승 신호 요약 -->
+            <div id="bull-summary" class="px-4 py-3 border-b border-slate-800 hidden">
+                <div class="text-xs font-semibold text-emerald-400 mb-2"><i class="fa-solid fa-arrow-trend-up"></i> 상승 신호 강함 (50점+)</div>
+                <div id="bull-summary-list" class="space-y-1 text-xs"></div>
+            </div>
+
+            <!-- 종목 카드 리스트 -->
+            <div id="coin-list" class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+                <div class="text-center text-slate-500 py-8 text-sm">분석 결과를 불러오는 중...</div>
+            </div>
+        </aside>
+
+        <!-- 우측: 상세 + 차트 -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <div id="empty-state" class="flex-1 flex items-center justify-center text-slate-500">
+                <div class="text-center">
+                    <i class="fa-solid fa-chart-line text-5xl mb-4 opacity-30"></i>
+                    <p>왼쪽에서 종목을 선택하세요</p>
+                    <p class="text-xs mt-2">또는 "지금 분석 실행" 버튼을 눌러 최신 데이터를 가져오세요</p>
+                </div>
+            </div>
+
+            <div id="detail-panel" class="hidden flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto scrollbar-thin">
+                <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <div>
+                        <h2 id="detail-title" class="text-2xl font-bold text-white"></h2>
+                        <p id="detail-meta" class="text-sm text-slate-400 mt-1"></p>
+                    </div>
+                    <div id="detail-bias" class="px-3 py-1.5 rounded-full text-sm font-medium bg-slate-800"></div>
+                </div>
+
+                <!-- 점수 바 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-emerald-400"><i class="fa-solid fa-arrow-up"></i> 상승 신호</span>
+                            <span id="bull-score-num" class="font-bold text-emerald-400"></span>
+                        </div>
+                        <div class="h-3 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bull-bar" class="score-bar h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full" style="width:0%"></div>
+                        </div>
+                        <p id="bull-reco" class="text-xs text-slate-400 mt-2"></p>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-red-400"><i class="fa-solid fa-arrow-down"></i> 하락 신호</span>
+                            <span id="bear-score-num" class="font-bold text-red-400"></span>
+                        </div>
+                        <div class="h-3 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="bear-bar" class="score-bar h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full" style="width:0%"></div>
+                        </div>
+                        <p id="bear-reco" class="text-xs text-slate-400 mt-2"></p>
+                    </div>
+                </div>
+
+                <!-- 차트 -->
+                <div class="bg-slate-900 rounded-xl border border-slate-800 p-3 mb-4">
+                    <div class="text-xs text-slate-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-candlestick"></i> 4h 캔들 + 스윙 포인트 + 매매 레벨
+                        {% if not has_mpl %}<span class="text-amber-400">(matplotlib 미설치)</span>{% endif %}
+                    </div>
+                    <div id="chart-container" class="min-h-[280px] flex items-center justify-center">
+                        <div class="text-slate-500 text-sm">차트 로딩 중...</div>
+                    </div>
+                </div>
+
+                <!-- 이유 + 레벨 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-emerald-400 mb-2">상승 분석 이유</h3>
+                        <ul id="bull-reasons" class="text-xs text-slate-300 space-y-1 list-disc list-inside"></ul>
+                        <div class="mt-3 pt-3 border-t border-slate-800 text-xs font-mono">
+                            <div class="text-slate-400 mb-1">Long 레벨</div>
+                            <div id="long-levels"></div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+                        <h3 class="text-sm font-semibold text-red-400 mb-2">하락 분석 이유</h3>
+                        <ul id="bear-reasons" class="text-xs text-slate-300 space-y-1 list-disc list-inside"></ul>
+                        <div class="mt-3 pt-3 border-t border-slate-800 text-xs font-mono">
+                            <div class="text-slate-400 mb-1">Short 레벨</div>
+                            <div id="short-levels"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allResults = [];
+        let selectedSymbol = null;
+        let isScanning = false;
+        const hasMpl = {{ 'true' if has_mpl else 'false' }};
+
+        function fmtPrice(p) {
+            if (p >= 1000) return p.toLocaleString('en-US', {maximumFractionDigits: 2});
+            if (p >= 1) return p.toFixed(4);
+            return p.toFixed(6);
+        }
+
+        function scoreColor(score, isBull) {
+            if (score >= 80) return isBull ? 'text-emerald-300' : 'text-red-300';
+            if (score >= 60) return isBull ? 'text-emerald-400' : 'text-red-400';
+            if (score >= 50) return 'text-amber-400';
+            return 'text-slate-400';
+        }
+
+        function biasBadgeClass(bias) {
+            if (bias.includes('강력 상승') || bias.includes('강한 상승')) return 'bg-emerald-900/50 text-emerald-300 border border-emerald-700';
+            if (bias.includes('강력 하락') || bias.includes('강한 하락')) return 'bg-red-900/50 text-red-300 border border-red-700';
+            if (bias.includes('Setup')) return 'bg-amber-900/50 text-amber-300 border border-amber-700';
+            return 'bg-slate-800 text-slate-300 border border-slate-700';
+        }
+
+        async function loadResults() {
+            try {
+                const res = await fetch('/api/latest?t=' + Date.now());
+                const data = await res.json();
+                allResults = data.results || [];
+
+                const updated = document.getElementById('last-updated');
+                if (data.generated_at) {
+                    updated.textContent = '마지막: ' + new Date(data.generated_at).toLocaleString('ko-KR');
+                } else {
+                    updated.textContent = '저장된 결과 없음';
+                }
+
+                renderBullSummary(data.bull_summary || []);
+                renderCoinList();
+
+                if (selectedSymbol) {
+                    const coin = allResults.find(r => r.symbol === selectedSymbol);
+                    if (coin) showDetail(coin);
+                } else if (allResults.length > 0) {
+                    showDetail(allResults[0]);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderBullSummary(summary) {
+            const box = document.getElementById('bull-summary');
+            const list = document.getElementById('bull-summary-list');
+            if (!summary.length) {
+                box.classList.add('hidden');
+                return;
+            }
+            box.classList.remove('hidden');
+            list.innerHTML = summary.map(s =>
+                `<div class="flex justify-between"><span>${s.kr} (${s.symbol})</span><span class="text-emerald-400 font-bold">${s.score}점</span></div>`
+            ).join('');
+        }
+
+        function renderCoinList() {
+            const container = document.getElementById('coin-list');
+            if (!allResults.length) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-8 text-sm">후보 없음. 분석을 실행하세요.</div>';
+                return;
+            }
+
+            container.innerHTML = allResults.map(r => {
+                const active = r.symbol === selectedSymbol ? 'ring-2 ring-sky-500 border-sky-600' : 'border-slate-800';
+                const chgColor = r.change_24h_pct >= 0 ? 'text-emerald-400' : 'text-red-400';
+                return `
+                <div class="coin-card bg-slate-900 border ${active} rounded-xl p-3 cursor-pointer" onclick="selectCoin('${r.symbol}')">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <span class="font-semibold text-white">${r.kr}</span>
+                            <span class="text-xs text-slate-500 ml-1">${r.symbol}</span>
+                        </div>
+                        <span class="text-sm font-mono">${fmtPrice(r.current_price)}</span>
+                    </div>
+                    <div class="flex justify-between text-xs mb-2">
+                        <span class="${chgColor}">${r.change_24h_pct >= 0 ? '+' : ''}${r.change_24h_pct}%</span>
+                        <span class="text-slate-500">RSI ${r.rsi_4h ? r.rsi_4h.toFixed(1) : '-'}</span>
+                    </div>
+                    <div class="flex gap-2 text-xs">
+                        <span class="${scoreColor(r.bull_score, true)}">▲ ${r.bull_score}</span>
+                        <span class="${scoreColor(r.bear_score, false)}">▼ ${r.bear_score}</span>
+                        <span class="text-slate-500 truncate flex-1 text-right">${r.overall_bias.split(' ')[0]}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function selectCoin(symbol) {
+            selectedSymbol = symbol;
+            const coin = allResults.find(r => r.symbol === symbol);
+            if (coin) showDetail(coin);
+            renderCoinList();
+        }
+
+        function showDetail(r) {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('detail-panel').classList.remove('hidden');
+
+            document.getElementById('detail-title').textContent = `${r.kr} (${r.eng})`;
+            document.getElementById('detail-meta').textContent =
+                `${r.symbol} · ${fmtPrice(r.current_price)} · 24h ${r.change_24h_pct >= 0 ? '+' : ''}${r.change_24h_pct}% · RSI ${r.rsi_4h ? r.rsi_4h.toFixed(1) : '-'} · ${r.higher_tf_bias}`;
+
+            const biasEl = document.getElementById('detail-bias');
+            biasEl.textContent = r.overall_bias;
+            biasEl.className = 'px-3 py-1.5 rounded-full text-sm font-medium ' + biasBadgeClass(r.overall_bias);
+
+            document.getElementById('bull-score-num').textContent = r.bull_score + '/100';
+            document.getElementById('bear-score-num').textContent = r.bear_score + '/100';
+            document.getElementById('bull-bar').style.width = r.bull_score + '%';
+            document.getElementById('bear-bar').style.width = r.bear_score + '%';
+            document.getElementById('bull-reco').textContent = r.bull_recommendation || '';
+            document.getElementById('bear-reco').textContent = r.bear_recommendation || '';
+
+            document.getElementById('bull-reasons').innerHTML = (r.bullish?.reasons || []).map(x => `<li>${x}</li>`).join('') || '<li>없음</li>';
+            document.getElementById('bear-reasons').innerHTML = (r.bearish?.reasons || []).map(x => `<li>${x}</li>`).join('') || '<li>없음</li>';
+
+            const ll = r.long_levels || {};
+            const sl = r.short_levels || {};
+            document.getElementById('long-levels').innerHTML =
+                `Entry ${fmtPrice(ll.entry)} · SL <span class="text-red-400">${fmtPrice(ll.sl)}</span><br>` +
+                `TP1 ${fmtPrice(ll.tp1)} · TP2 ${fmtPrice(ll.tp2)} · TP3 ${fmtPrice(ll.tp3)}`;
+            document.getElementById('short-levels').innerHTML =
+                `Entry ${fmtPrice(sl.entry)} · SL <span class="text-red-400">${fmtPrice(sl.sl)}</span><br>` +
+                `TP1 ${fmtPrice(sl.tp1)} · TP2 ${fmtPrice(sl.tp2)} · TP3 ${fmtPrice(sl.tp3)}`;
+
+            loadChart(r.symbol);
+        }
+
+        async function loadChart(symbol) {
+            const container = document.getElementById('chart-container');
+            if (!hasMpl) {
+                container.innerHTML = '<div class="text-amber-400 text-sm">matplotlib이 필요합니다</div>';
+                return;
+            }
+            container.innerHTML = '<div class="text-slate-500 text-sm"><i class="fa-solid fa-spinner fa-spin"></i> 차트 생성 중...</div>';
+            try {
+                const res = await fetch(`/api/chart-b64/${encodeURIComponent(symbol)}?t=${Date.now()}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                container.innerHTML = `<img src="data:image/png;base64,${data.image}" class="w-full rounded-lg" alt="chart">`;
+            } catch (e) {
+                container.innerHTML = `<div class="text-red-400 text-sm">차트 오류: ${e.message}</div>`;
+            }
+        }
+
+        async function runScan() {
+            if (!{{ 'true' if allow_scan else 'false' }}) return;
+            if (isScanning) return;
+            isScanning = true;
+            document.getElementById('scan-text').textContent = '분석 중... (1~2분)';
+            document.getElementById('status-line').textContent = '바이낸스 API에서 데이터를 가져오는 중...';
+            document.getElementById('btn-scan').disabled = true;
+            document.getElementById('btn-scan').classList.add('opacity-60');
+
+            try {
+                await fetch('/api/scan', { method: 'POST' });
+                const poll = setInterval(async () => {
+                    const st = await (await fetch('/api/status')).json();
+                    if (!st.scanning) {
+                        clearInterval(poll);
+                        isScanning = false;
+                        document.getElementById('scan-text').textContent = '지금 분석 실행';
+                        document.getElementById('btn-scan').disabled = false;
+                        document.getElementById('btn-scan').classList.remove('opacity-60');
+                        document.getElementById('status-line').textContent = st.last_error ? '오류: ' + st.last_error : '완료!';
+                        await loadResults();
+                        await loadReports();
+                        setTimeout(() => { document.getElementById('status-line').textContent = ''; }, 3000);
+                    }
+                }, 2000);
+            } catch (e) {
+                isScanning = false;
+                document.getElementById('scan-text').textContent = '지금 분석 실행';
+                document.getElementById('status-line').textContent = '실패: ' + e.message;
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const res = await fetch('/api/reports');
+                const reports = await res.json();
+                const sel = document.getElementById('report-select');
+                sel.innerHTML = '<option value="">이전 리포트...</option>';
+                reports.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.filename;
+                    const d = r.generated_at ? new Date(r.generated_at).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : r.filename;
+                    opt.textContent = d;
+                    sel.appendChild(opt);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadReport(filename) {
+            if (!filename) return;
+            const res = await fetch('/api/report/' + encodeURIComponent(filename));
+            const data = await res.json();
+            allResults = data.results || [];
+            selectedSymbol = null;
+            renderBullSummary(data.bull_summary || []);
+            renderCoinList();
+            if (allResults.length) showDetail(allResults[0]);
+            document.getElementById('last-updated').textContent = '로드: ' + filename;
+        }
+
+        loadResults();
+        loadReports();
+        setInterval(async () => {
+            const st = await (await fetch('/api/status')).json();
+            if (!st.scanning && !isScanning) loadResults();
+        }, 30000);
+    </script>
+</body>
+</html>

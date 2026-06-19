@@ -1,0 +1,24 @@
+# Render.com 원클릭 배포 설정
+# https://render.com 에서 New → Blueprint → 이 repo 연결
+
+services:
+  - type: web
+    name: elliott-focused-viewer
+    runtime: python
+    plan: free
+    rootDir: 지정종목_뷰어
+    buildCommand: pip install -r requirements-web.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 180
+    healthCheckPath: /api/status
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: WEB_DEPLOY
+        value: "1"
+      - key: MPLBACKEND
+        value: Agg
+      - key: DISABLE_SCAN
+        value: "1"
+      # 수동 스캔을 허용하려면 아래 주석 해제 후 Render 대시보드에서 값 설정
+      # - key: SCAN_SECRET
+      #   generateValue: true

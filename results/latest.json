@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-06-14T09:11:30.262612+00:00",
+  "candidates": [
+    {
+      "symbol": "CHIPUSDT",
+      "score": 66,
+      "wave": "Wave 3 in progress / starting",
+      "reasons": [
+        "Strong HH + HL structure",
+        "Break of prior high (age=5 bars)",
+        "Volume surge on impulse",
+        "Recent acceleration"
+      ],
+      "price": 0.03555,
+      "volume_24h": 6380575.80826,
+      "rsi": 65.18181818181816,
+      "entry": 0.03555,
+      "tp": 0.04288321,
+      "sl": 0.0297849,
+      "meta": {
+        "breakout_age_bars": 99
+      }
+    },
+    {
+      "symbol": "SOLUSDT",
+      "score": 58,
+      "wave": "Impulse Setup",
+      "reasons": [
+        "Strong HH + HL structure",
+        "Good Wave 2-style retrace 58.0%",
+        "Break of prior high (age=11 bars)",
+        "RSI 60 healthy"
+      ],
+      "price": 68.19,
+      "volume_24h": 110322118.68666,
+      "rsi": 59.96533795493927,
+      "entry": 68.19,
+      "tp": 76.97924016,
+      "sl": 61.28022,
+      "meta": {
+        "leg_pct": 6.0,
+        "breakout_age_bars": 99
+      }
+    },
+    {
+      "symbol": "ZKPUSDT",
+      "score": 58,
+      "wave": "Impulse Setup",
+      "reasons": [
+        "Strong HH + HL structure",
+        "Good Wave 2-style retrace 55.4%",
+        "Break of prior high (age=17 bars)",
+        "Recent acceleration"
+      ],
+      "price": 0.0628,
+      "volume_24h": 4790146.94395,
+      "rsi": 70.73170731707319,
+      "entry": 0.0628,
+      "tp": 0.07953761,
+      "sl": 0.0496415,
+      "meta": {
+        "leg_pct": 16.5,
+        "breakout_age_bars": 99
+      }
+    },
+    {
+      "symbol": "TAOUSDT",
+      "score": 55,
+      "wave": "Impulse Setup",
+      "reasons": [
+        "Strong HH + HL structure",
+        "Good Wave 2-style retrace 51.7%",
+        "Break of prior high (age=14 bars)",
+        "Recent acceleration"
+      ],
+      "price": 265.8,
+      "volume_24h": 94605987.29072,
+      "rsi": 75.24461839530332,
+      "entry": 265.8,
+      "tp": 356.6982648,
+      "sl": 194.3391,
+      "meta": {
+        "leg_pct": 25.9,
+        "breakout_age_bars": 99
+      }
+    },
+    {
+      "symbol": "UTKUSDT",
+      "score": 55,
+      "wave": "Impulse Setup",
+      "reasons": [
+        "Strong HH + HL structure",
+        "Good Wave 2-style retrace 70.0%",
+        "Recent acceleration",
+        "RSI 53 healthy"
+      ],
+      "price": 0.00795,
+      "volume_24h": 10207948.62723,
+      "rsi": 53.34507042253522,
+      "entry": 0.00795,
+      "tp": 0.010085,
+      "sl": 0.00627154,
+      "meta": {
+        "leg_pct": 16.7,
+        "breakout_age_bars": 99
+      }
+    },
+    {
+      "symbol": "FETUSDT",
+      "score": 52,
+      "wave": "Impulse Setup",
+      "reasons": [
+        "Good HH + HL structure",
+        "Good Wave 2-style retrace 48.4%",
+        "Break of prior high (age=16 bars)",
+        "RSI 68 healthy"
+      ],
+      "price": 0.2107,
+      "volume_24h": 22943772.74647,
+      "rsi": 68.32669322709165,
+      "entry": 0.2107,
+      "tp": 0.25064182,
+      "sl": 0.1792992,
+      "meta": {
+        "leg_pct": 11.8,
+        "breakout_age_bars": 99
+      }
+    },
+    {
+      "symbol": "LTCUSDT",
+      "score": 52,
+      "wave": "Impulse Setup",
+      "reasons": [
+        "Good HH + HL structure",
+        "Good Wave 2-style retrace 40.9%",
+        "Break of prior high (age=23 bars)",
+        "Strong breakout candle"
+      ],
+      "price": 44.21,
+      "volume_24h": 10236069.26212,
+      "rsi": 73.2732732732734,
+      "entry": 44.21,
+      "tp": 48.86711,
+      "sl": 40.54875,
+      "meta": {
+        "leg_pct": 5.3,
+        "breakout_age_bars": 99
+      }
+    }
+  ],
+  "meta": {
+    "pool": "Top 100 USDT by 24h volume"
+  }
+}

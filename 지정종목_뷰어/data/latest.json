@@ -1,0 +1,1071 @@
+{
+  "generated_at": "2026-06-19T17:25:35.602490",
+  "interval": "4h",
+  "lookback": 110,
+  "coins": [
+    "비트코인",
+    "라이트코인",
+    "리플",
+    "에이다",
+    "비트코인캐시",
+    "스텔라루멘",
+    "지캐시",
+    "호라이즌",
+    "나이트",
+    "콘엑스"
+  ],
+  "results": [
+    {
+      "kr": "비트코인",
+      "symbol": "BTCUSDT",
+      "eng": "Bitcoin",
+      "current_price": 62690.0,
+      "change_24h_pct": -2.92,
+      "volume_24h": 1035644184.5805978,
+      "rsi_4h": 28.082739652344856,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 36,
+        "label": "불명확 / 조정 중",
+        "reasons": [
+          "Higher High + Higher Low 양호한 구조",
+          "얕은 조정 34.5% (Wave 3 가능성 있지만 약할 수 있음)"
+        ],
+        "bullish": false,
+        "rsi": 28.082739652344856,
+        "price": 62690.0,
+        "meta": {
+          "retrace_pct": 34.5,
+          "leg_from_w2_low_pct": 2.5,
+          "breakout_pct": -2.8
+        },
+        "swings": [
+          {
+            "idx": 86,
+            "price": 67292.14,
+            "type": "high"
+          },
+          {
+            "idx": 91,
+            "price": 66481.73,
+            "type": "high"
+          },
+          {
+            "idx": 102,
+            "price": 64510.44,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 62369.44,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 35,
+        "label": "불명확 / 반등 중 또는 조정",
+        "reasons": [
+          "Lower High + Lower Low 강한 연속 구조 (청정 하락 impulse)"
+        ],
+        "bearish": false,
+        "rsi": 28.082739652344856,
+        "price": 62690.0,
+        "meta": {
+          "breakdown_pct": -0.5
+        },
+        "swings": [
+          {
+            "idx": 86,
+            "price": 67292.14,
+            "type": "high"
+          },
+          {
+            "idx": 91,
+            "price": 66481.73,
+            "type": "high"
+          },
+          {
+            "idx": 102,
+            "price": 64510.44,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 62369.44,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 36,
+      "bear_score": 41,
+      "bull_recommendation": "★ 신호 미약 (관망 우세)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 62690.0,
+        "sl": 61246.79008,
+        "tp1": 65025.11365056,
+        "tp2": 65576.41984,
+        "tp3": 66468.32357056,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 62690.0,
+        "sl": 68503.39852,
+        "tp1": 53283.92119464,
+        "tp2": 51063.20296,
+        "tp3": 47470.52267464,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "라이트코인",
+      "symbol": "LTCUSDT",
+      "eng": "Litecoin",
+      "current_price": 43.52,
+      "change_24h_pct": -2.25,
+      "volume_24h": 11225339.5309,
+      "rsi_4h": 29.511278195488728,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 54,
+        "label": "약한 상승 신호",
+        "reasons": [
+          "Higher High + Higher Low 강한 연속 구조 (청정 impulse 진행)",
+          "Wave 2 유효 조정 71.8% (38.2~78.6% 피보나치 존 - 고전 규칙 충족)"
+        ],
+        "bullish": false,
+        "rsi": 29.511278195488728,
+        "price": 43.52,
+        "meta": {
+          "retrace_pct": 71.8,
+          "leg_from_w2_low_pct": -3.1,
+          "breakout_pct": -4.8
+        },
+        "swings": [
+          {
+            "idx": 86,
+            "price": 46.09,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 44.92,
+            "type": "low"
+          },
+          {
+            "idx": 95,
+            "price": 45.7,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 43.1,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 45,
+        "label": "불명확 / 반등 중 또는 조정",
+        "reasons": [
+          "Lower High + Lower Low 양호한 구조",
+          "하락 Wave 2 유효 반등 66.7% (피보나치 존)"
+        ],
+        "bearish": false,
+        "rsi": 29.511278195488728,
+        "price": 43.52,
+        "meta": {
+          "retrace_pct": 66.7,
+          "breakdown_pct": -1.0
+        },
+        "swings": [
+          {
+            "idx": 86,
+            "price": 46.09,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 44.92,
+            "type": "low"
+          },
+          {
+            "idx": 95,
+            "price": 45.7,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 43.1,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 54,
+      "bear_score": 51,
+      "bull_recommendation": "★★ 약한 상승 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "bear_recommendation": "★★ 약한 하락 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 43.52,
+        "sl": 42.3242,
+        "tp1": 45.4548044,
+        "tp2": 45.9116,
+        "tp3": 46.6506044,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 43.52,
+        "sl": 46.91962,
+        "tp1": 38.01941484,
+        "tp2": 36.72076,
+        "tp3": 34.61979484,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "리플",
+      "symbol": "XRPUSDT",
+      "eng": "Ripple",
+      "current_price": 1.1285,
+      "change_24h_pct": -4.27,
+      "volume_24h": 137669503.66751,
+      "rsi_4h": 23.390036452004935,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 54,
+        "label": "약한 상승 신호",
+        "reasons": [
+          "Higher High + Higher Low 강한 연속 구조 (청정 impulse 진행)",
+          "Wave 2 유효 조정 46.2% (38.2~78.6% 피보나치 존 - 고전 규칙 충족)"
+        ],
+        "bullish": false,
+        "rsi": 23.390036452004935,
+        "price": 1.1285,
+        "meta": {
+          "retrace_pct": 46.2,
+          "leg_from_w2_low_pct": -6.7,
+          "breakout_pct": -11.5
+        },
+        "swings": [
+          {
+            "idx": 81,
+            "price": 1.1331,
+            "type": "low"
+          },
+          {
+            "idx": 87,
+            "price": 1.2757,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 1.2098,
+            "type": "low"
+          },
+          {
+            "idx": 104,
+            "price": 1.1379,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 31,
+        "label": "하락 Wave 3 진행 또는 시작",
+        "reasons": [
+          "이전 저점 하회 (경과 5봉) - 하락 impulse 개시"
+        ],
+        "bearish": false,
+        "rsi": 23.390036452004935,
+        "price": 1.1285,
+        "meta": {
+          "breakdown_pct": 0.8
+        },
+        "swings": [
+          {
+            "idx": 81,
+            "price": 1.1331,
+            "type": "low"
+          },
+          {
+            "idx": 87,
+            "price": 1.2757,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 1.2098,
+            "type": "low"
+          },
+          {
+            "idx": 104,
+            "price": 1.1379,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 54,
+      "bear_score": 37,
+      "bull_recommendation": "★★ 약한 상승 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 1.1285,
+        "sl": 1.1127042,
+        "tp1": 1.1540576,
+        "tp2": 1.1600916,
+        "tp3": 1.1698534,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 1.1285,
+        "sl": 1.2986626,
+        "tp1": 0.85317691,
+        "tp2": 0.7881748,
+        "tp3": 0.68301431,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "에이다",
+      "symbol": "ADAUSDT",
+      "eng": "Cardano",
+      "current_price": 0.1601,
+      "change_24h_pct": -4.13,
+      "volume_24h": 21542436.72411,
+      "rsi_4h": 27.208480565371048,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 28,
+        "label": "불명확 / 조정 중",
+        "reasons": [
+          "Higher High + Higher Low 양호한 구조"
+        ],
+        "bullish": false,
+        "rsi": 27.208480565371048,
+        "price": 0.1601,
+        "meta": {
+          "breakout_pct": -15.2
+        },
+        "swings": [
+          {
+            "idx": 81,
+            "price": 0.1661,
+            "type": "low"
+          },
+          {
+            "idx": 86,
+            "price": 0.1889,
+            "type": "high"
+          },
+          {
+            "idx": 99,
+            "price": 0.1656,
+            "type": "low"
+          },
+          {
+            "idx": 104,
+            "price": 0.1604,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 35,
+        "label": "불명확 / 반등 중 또는 조정",
+        "reasons": [
+          "Lower High + Lower Low 강한 연속 구조 (청정 하락 impulse)"
+        ],
+        "bearish": false,
+        "rsi": 27.208480565371048,
+        "price": 0.1601,
+        "meta": {
+          "breakdown_pct": 0.2
+        },
+        "swings": [
+          {
+            "idx": 81,
+            "price": 0.1661,
+            "type": "low"
+          },
+          {
+            "idx": 86,
+            "price": 0.1889,
+            "type": "high"
+          },
+          {
+            "idx": 99,
+            "price": 0.1656,
+            "type": "low"
+          },
+          {
+            "idx": 104,
+            "price": 0.1604,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 28,
+      "bear_score": 41,
+      "bull_recommendation": "★ 신호 미약 (관망 우세)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 0.1601,
+        "sl": 0.1575128,
+        "tp1": 0.16428609,
+        "tp2": 0.1652744,
+        "tp3": 0.16687329,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 0.1601,
+        "sl": 0.1923002,
+        "tp1": 0.10800008,
+        "tp2": 0.0956996,
+        "tp3": 0.07579988,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "비트코인캐시",
+      "symbol": "BCHUSDT",
+      "eng": "Bitcoin Cash",
+      "current_price": 194.0,
+      "change_24h_pct": -7.79,
+      "volume_24h": 14109873.8297,
+      "rsi_4h": 28.07775377969756,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 28,
+        "label": "불명확 / 조정 중",
+        "reasons": [
+          "Higher High + Higher Low 양호한 구조"
+        ],
+        "bullish": false,
+        "rsi": 28.07775377969756,
+        "price": 194.0,
+        "meta": {
+          "breakout_pct": -10.2
+        },
+        "swings": [
+          {
+            "idx": 85,
+            "price": 228.4,
+            "type": "high"
+          },
+          {
+            "idx": 90,
+            "price": 224.8,
+            "type": "high"
+          },
+          {
+            "idx": 98,
+            "price": 216.1,
+            "type": "high"
+          },
+          {
+            "idx": 99,
+            "price": 209.3,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 44,
+        "label": "하락 Wave 3 진행 또는 시작",
+        "reasons": [
+          "Lower High + Lower Low 강한 연속 구조 (청정 하락 impulse)",
+          "이전 저점 하회 (경과 10봉) - 하락 impulse 개시"
+        ],
+        "bearish": false,
+        "rsi": 28.07775377969756,
+        "price": 194.0,
+        "meta": {
+          "breakdown_pct": 7.3
+        },
+        "swings": [
+          {
+            "idx": 85,
+            "price": 228.4,
+            "type": "high"
+          },
+          {
+            "idx": 90,
+            "price": 224.8,
+            "type": "high"
+          },
+          {
+            "idx": 98,
+            "price": 216.1,
+            "type": "high"
+          },
+          {
+            "idx": 99,
+            "price": 209.3,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 28,
+      "bear_score": 50,
+      "bull_recommendation": "★ 신호 미약 (관망 우세)",
+      "bear_recommendation": "★★ 약한 하락 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 194.0,
+        "sl": 180.42,
+        "tp1": 215.97244,
+        "tp2": 221.16,
+        "tp3": 229.55244,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 194.0,
+        "sl": 232.5112,
+        "tp1": 131.6888784,
+        "tp2": 116.9776,
+        "tp3": 93.1776784,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "스텔라루멘",
+      "symbol": "XLMUSDT",
+      "eng": "Stellar Lumens",
+      "current_price": 0.2206,
+      "change_24h_pct": -7.89,
+      "volume_24h": 62241692.2713,
+      "rsi_4h": 44.54148471615719,
+      "higher_tf_bias": "상승 우위 (일봉 20/50 위)",
+      "bullish": {
+        "score": 38,
+        "label": "불명확 / 조정 중",
+        "reasons": [
+          "Higher High + Higher Low 강한 연속 구조 (청정 impulse 진행)",
+          "RSI 45 (Wave 3 시작에 적합한 모멘텀 구간)"
+        ],
+        "bullish": false,
+        "rsi": 44.54148471615719,
+        "price": 0.2206,
+        "meta": {
+          "breakout_pct": -7.7
+        },
+        "swings": [
+          {
+            "idx": 86,
+            "price": 0.2248,
+            "type": "high"
+          },
+          {
+            "idx": 94,
+            "price": 0.2167,
+            "type": "low"
+          },
+          {
+            "idx": 99,
+            "price": 0.2203,
+            "type": "low"
+          },
+          {
+            "idx": 102,
+            "price": 0.2389,
+            "type": "high"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 21,
+        "label": "불명확 / 반등 중 또는 조정",
+        "reasons": [
+          "RSI 45 (하락 impulse에 적합한 모멘텀)"
+        ],
+        "bearish": false,
+        "rsi": 44.54148471615719,
+        "price": 0.2206,
+        "meta": {
+          "breakdown_pct": -0.1
+        },
+        "swings": [
+          {
+            "idx": 86,
+            "price": 0.2248,
+            "type": "high"
+          },
+          {
+            "idx": 94,
+            "price": 0.2167,
+            "type": "low"
+          },
+          {
+            "idx": 99,
+            "price": 0.2203,
+            "type": "low"
+          },
+          {
+            "idx": 102,
+            "price": 0.2389,
+            "type": "high"
+          }
+        ]
+      },
+      "bull_score": 44,
+      "bear_score": 21,
+      "bull_recommendation": "★ 신호 미약 (관망 우세)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 0.2206,
+        "sl": 0.2127994,
+        "tp1": 0.23322137,
+        "tp2": 0.2362012,
+        "tp3": 0.24102197,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 0.2206,
+        "sl": 0.2432002,
+        "tp1": 0.18403288,
+        "tp2": 0.1753996,
+        "tp3": 0.16143268,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "지캐시",
+      "symbol": "ZECUSDT",
+      "eng": "Zcash",
+      "current_price": 450.3,
+      "change_24h_pct": -4.48,
+      "volume_24h": 97935941.90121,
+      "rsi_4h": 17.963567442350225,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 46,
+        "label": "불명확 / 조정 중",
+        "reasons": [
+          "Higher High + Higher Low 양호한 구조",
+          "Wave 2 유효 조정 47.1% (38.2~78.6% 피보나치 존 - 고전 규칙 충족)"
+        ],
+        "bullish": false,
+        "rsi": 17.963567442350225,
+        "price": 450.3,
+        "meta": {
+          "retrace_pct": 47.1,
+          "leg_from_w2_low_pct": 9.3,
+          "breakout_pct": -11.9
+        },
+        "swings": [
+          {
+            "idx": 85,
+            "price": 535.66,
+            "type": "high"
+          },
+          {
+            "idx": 93,
+            "price": 497.07,
+            "type": "low"
+          },
+          {
+            "idx": 95,
+            "price": 511.15,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 447.32,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 53,
+        "label": "약한 하락 신호",
+        "reasons": [
+          "Lower High + Lower Low 강한 연속 구조 (청정 하락 impulse)",
+          "하락 Wave 2 유효 반등 63.1% (피보나치 존)"
+        ],
+        "bearish": false,
+        "rsi": 17.963567442350225,
+        "price": 450.3,
+        "meta": {
+          "retrace_pct": 63.1,
+          "breakdown_pct": -0.7
+        },
+        "swings": [
+          {
+            "idx": 85,
+            "price": 535.66,
+            "type": "high"
+          },
+          {
+            "idx": 93,
+            "price": 497.07,
+            "type": "low"
+          },
+          {
+            "idx": 95,
+            "price": 511.15,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 447.32,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 46,
+      "bear_score": 59,
+      "bull_recommendation": "★ 신호 미약 (관망 우세)",
+      "bear_recommendation": "★★ 약한 하락 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 450.3,
+        "sl": 439.26824,
+        "tp1": 468.14938768,
+        "tp2": 472.36352,
+        "tp3": 479.18114768,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 450.3,
+        "sl": 545.30188,
+        "tp1": 296.58695816,
+        "tp2": 260.29624,
+        "tp3": 201.58507816,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "호라이즌",
+      "symbol": "ZENUSDT",
+      "eng": "Horizen",
+      "current_price": 4.322,
+      "change_24h_pct": -3.79,
+      "volume_24h": 1509180.34331,
+      "rsi_4h": 31.85929648241205,
+      "higher_tf_bias": "하락 우위 (일봉 20/50 아래)",
+      "bullish": {
+        "score": 36,
+        "label": "불명확 / 조정 중",
+        "reasons": [
+          "Higher High + Higher Low 양호한 구조",
+          "얕은 조정 30.9% (Wave 3 가능성 있지만 약할 수 있음)"
+        ],
+        "bullish": false,
+        "rsi": 31.85929648241205,
+        "price": 4.322,
+        "meta": {
+          "retrace_pct": 30.9,
+          "leg_from_w2_low_pct": -0.3,
+          "breakout_pct": -9.4
+        },
+        "swings": [
+          {
+            "idx": 91,
+            "price": 4.77,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 4.641,
+            "type": "low"
+          },
+          {
+            "idx": 99,
+            "price": 4.458,
+            "type": "low"
+          },
+          {
+            "idx": 104,
+            "price": 4.227,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 35,
+        "label": "불명확 / 반등 중 또는 조정",
+        "reasons": [
+          "Lower High + Lower Low 강한 연속 구조 (청정 하락 impulse)"
+        ],
+        "bearish": false,
+        "rsi": 31.85929648241205,
+        "price": 4.322,
+        "meta": {
+          "breakdown_pct": -2.2
+        },
+        "swings": [
+          {
+            "idx": 91,
+            "price": 4.77,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 4.641,
+            "type": "low"
+          },
+          {
+            "idx": 99,
+            "price": 4.458,
+            "type": "low"
+          },
+          {
+            "idx": 104,
+            "price": 4.227,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 36,
+      "bear_score": 41,
+      "bull_recommendation": "★ 신호 미약 (관망 우세)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 4.322,
+        "sl": 4.150914,
+        "tp1": 4.59881715,
+        "tp2": 4.664172,
+        "tp3": 4.76990315,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 4.322,
+        "sl": 4.85586,
+        "tp1": 3.45821452,
+        "tp2": 3.25428,
+        "tp3": 2.92435452,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "나이트",
+      "symbol": "NIGHTUSDT",
+      "eng": "Night",
+      "current_price": 0.03177,
+      "change_24h_pct": 4.16,
+      "volume_24h": 168632697.87919,
+      "rsi_4h": 44.23529411764706,
+      "higher_tf_bias": "중립 / 박스 (일봉 혼조)",
+      "bullish": {
+        "score": 53,
+        "label": "약한 상승 신호",
+        "reasons": [
+          "Higher High + Higher Low 양호한 구조",
+          "Wave 2 유효 조정 40.1% (38.2~78.6% 피보나치 존 - 고전 규칙 충족)",
+          "RSI 44 (Wave 3 시작에 적합한 모멘텀 구간)",
+          "최근 6봉 내 강한 가속"
+        ],
+        "bullish": false,
+        "rsi": 44.23529411764706,
+        "price": 0.03177,
+        "meta": {
+          "retrace_pct": 40.1,
+          "leg_from_w2_low_pct": -3.0,
+          "breakout_pct": -6.6
+        },
+        "swings": [
+          {
+            "idx": 67,
+            "price": 0.03466,
+            "type": "high"
+          },
+          {
+            "idx": 80,
+            "price": 0.03093,
+            "type": "low"
+          },
+          {
+            "idx": 88,
+            "price": 0.03403,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 0.02956,
+            "type": "low"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 41,
+        "label": "불명확 / 반등 중 또는 조정",
+        "reasons": [
+          "Lower High + Lower Low 강한 연속 구조 (청정 하락 impulse)",
+          "RSI 44 (하락 impulse에 적합한 모멘텀)"
+        ],
+        "bearish": false,
+        "rsi": 44.23529411764706,
+        "price": 0.03177,
+        "meta": {
+          "breakdown_pct": -7.5
+        },
+        "swings": [
+          {
+            "idx": 67,
+            "price": 0.03466,
+            "type": "high"
+          },
+          {
+            "idx": 80,
+            "price": 0.03093,
+            "type": "low"
+          },
+          {
+            "idx": 88,
+            "price": 0.03403,
+            "type": "high"
+          },
+          {
+            "idx": 104,
+            "price": 0.02956,
+            "type": "low"
+          }
+        ]
+      },
+      "bull_score": 53,
+      "bear_score": 41,
+      "bull_recommendation": "★★ 약한 상승 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 0.03177,
+        "sl": 0.02902792,
+        "tp1": 0.03620669,
+        "tp2": 0.03725416,
+        "tp3": 0.03894877,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 0.03177,
+        "sl": 0.03528388,
+        "tp1": 0.02608454,
+        "tp2": 0.02474224,
+        "tp3": 0.02257066,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    },
+    {
+      "kr": "콘엑스",
+      "symbol": "CONX",
+      "eng": "Connex (CONX)",
+      "current_price": 10.66,
+      "change_24h_pct": -2.97,
+      "volume_24h": 4401.01,
+      "rsi_4h": 27.471063369139756,
+      "higher_tf_bias": "중립 / 박스 (일봉 혼조)",
+      "bullish": {
+        "score": 54,
+        "label": "약한 상승 신호",
+        "reasons": [
+          "Higher High + Higher Low 강한 연속 구조 (청정 impulse 진행)",
+          "Wave 2 유효 조정 68.0% (38.2~78.6% 피보나치 존 - 고전 규칙 충족)"
+        ],
+        "bullish": false,
+        "rsi": 27.471063369139756,
+        "price": 10.6561,
+        "meta": {
+          "retrace_pct": 68.0,
+          "leg_from_w2_low_pct": -1.0,
+          "breakout_pct": -2.9
+        },
+        "swings": [
+          {
+            "idx": 68,
+            "price": 10.9595,
+            "type": "high"
+          },
+          {
+            "idx": 87,
+            "price": 11.4707,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 11.3018,
+            "type": "high"
+          },
+          {
+            "idx": 103,
+            "price": 10.9782,
+            "type": "high"
+          }
+        ]
+      },
+      "bearish": {
+        "score": 36,
+        "label": "하락 Wave 3 진행 또는 시작",
+        "reasons": [
+          "Lower High + Lower Low 양호한 구조",
+          "이전 저점 하회 (경과 42봉) - 하락 impulse 개시"
+        ],
+        "bearish": false,
+        "rsi": 27.471063369139756,
+        "price": 10.6561,
+        "meta": {
+          "breakdown_pct": 1.0
+        },
+        "swings": [
+          {
+            "idx": 68,
+            "price": 10.9595,
+            "type": "high"
+          },
+          {
+            "idx": 87,
+            "price": 11.4707,
+            "type": "high"
+          },
+          {
+            "idx": 92,
+            "price": 11.3018,
+            "type": "high"
+          },
+          {
+            "idx": 103,
+            "price": 10.9782,
+            "type": "high"
+          }
+        ]
+      },
+      "bull_score": 54,
+      "bear_score": 36,
+      "bull_recommendation": "★★ 약한 상승 신호 (위험 엄격 관리 필요, 소량 관찰)",
+      "bear_recommendation": "★ 신호 미약 (관망 우세)",
+      "overall_bias": "양방향 혼조 또는 관망",
+      "favored": "neutral",
+      "long_levels": {
+        "entry": 10.66,
+        "sl": 9.9138,
+        "tp1": 11.8673516,
+        "tp2": 12.1524,
+        "tp3": 12.6135516,
+        "risk_reward": "1 : 1.62~2.62"
+      },
+      "short_levels": {
+        "entry": 10.66,
+        "sl": 11.6771726,
+        "tp1": 9.01421473,
+        "tp2": 8.6256548,
+        "tp3": 7.99704213,
+        "risk_reward": "1 : 1.62~2.62"
+      }
+    }
+  ],
+  "updated_by": "github-actions"
+}
