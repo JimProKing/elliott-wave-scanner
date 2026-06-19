@@ -29,10 +29,10 @@ if str(APP_DIR) not in sys.path:
 
 from analyzer_bridge import (  # noqa: E402
     DEFAULT_TOP_N,
-    get_coin_candles,
     list_saved_reports,
     load_latest_saved,
     load_report,
+    resolve_chart_candles,
     run_analysis,
 )
 from charts import HAS_MPL, chart_to_base64, generate_chart_bytes  # noqa: E402
@@ -50,10 +50,14 @@ IS_PRODUCTION = os.environ.get("RENDER") or os.environ.get("WEB_DEPLOY") or os.e
 SCAN_SECRET = os.environ.get("SCAN_SECRET", "")
 
 
+def _public_result(row: dict) -> dict:
+    return {k: v for k, v in row.items() if k not in ("chart_candles", "candles")}
+
+
 def _serialize_results(data: dict) -> dict:
     if not data:
         return {"generated_at": None, "results": [], "meta": {}}
-    results = data.get("results", [])
+    results = [_public_result(r) for r in data.get("results", [])]
     bull_summary = sorted(
         [r for r in results if r.get("bull_score", 0) >= 50],
         key=lambda x: x.get("bull_score", 0),
@@ -172,7 +176,11 @@ def api_chart(symbol: str):
         return "종목 없음", 404
 
     interval = data.get("interval", "4h")
-    candles = get_coin_candles(symbol, interval=interval, limit=110)
+    candles, err = resolve_chart_candles(
+        coin, symbol, interval=interval, limit=110, allow_live_fetch=not IS_PRODUCTION
+    )
+    if err:
+        return err, 503 if IS_PRODUCTION else 500
     png = generate_chart_bytes(candles, coin, interval=interval)
     if not png:
         return "차트 생성 실패", 500
@@ -193,11 +201,15 @@ def api_chart_b64(symbol: str):
         return jsonify({"error": "종목 없음"}), 404
 
     interval = data.get("interval", "4h")
-    candles = get_coin_candles(symbol, interval=interval, limit=110)
+    candles, err = resolve_chart_candles(
+        coin, symbol, interval=interval, limit=110, allow_live_fetch=not IS_PRODUCTION
+    )
+    if err:
+        return jsonify({"error": err}), 503 if IS_PRODUCTION else 500
     png = generate_chart_bytes(candles, coin, interval=interval)
     b64 = chart_to_base64(png)
     if not b64:
-        return jsonify({"error": "차트 생성 실패"}), 500
+        return jsonify({"error": "차트 생성 실패 (matplotlib)"}), 500
     return jsonify({"image": b64, "symbol": symbol})
 
 

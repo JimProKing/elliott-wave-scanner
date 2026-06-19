@@ -147,3 +147,38 @@ def load_report(filename: str) -> Optional[Dict]:
 
 def get_coin_candles(symbol: str, interval: str = "4h", limit: int = 110) -> List[Dict]:
     return fetch_klines(symbol, interval=interval, limit=limit)
+
+
+def get_saved_chart_candles(coin: Dict, limit: int = 110) -> List[Dict]:
+    """스캔 시 저장된 OHLC 캔들 (웹 배포 차트용)."""
+    saved = coin.get("chart_candles") or coin.get("candles") or []
+    if not saved:
+        return []
+    if limit and len(saved) > limit:
+        return saved[-limit:]
+    return saved
+
+
+def resolve_chart_candles(
+    coin: Dict,
+    symbol: str,
+    interval: str = "4h",
+    limit: int = 110,
+    *,
+    allow_live_fetch: bool = True,
+) -> tuple[List[Dict], Optional[str]]:
+    saved = get_saved_chart_candles(coin, limit=limit)
+    if len(saved) >= 20:
+        return saved, None
+
+    if not allow_live_fetch:
+        if saved:
+            return [], f"저장된 캔들 부족 ({len(saved)}개, 최소 20개 필요)"
+        return [], "저장된 캔들 없음 — GitHub Actions 스캔 후 재배포가 필요합니다"
+
+    live = get_coin_candles(symbol, interval=interval, limit=limit)
+    if len(live) >= 20:
+        return live, None
+    if saved:
+        return [], f"캔들 부족 (저장 {len(saved)}개, 실시간 {len(live)}개)"
+    return [], f"캔들 데이터 없음 (실시간 {len(live)}개)"

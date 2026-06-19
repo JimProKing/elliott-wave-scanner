@@ -759,6 +759,16 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110, top_n: int =
             "favored": favored,
             "long_levels": long_levels,
             "short_levels": short_levels,
+            "chart_candles": [
+                {
+                    "open_time": c["open_time"],
+                    "open": c["open"],
+                    "high": c["high"],
+                    "low": c["low"],
+                    "close": c["close"],
+                }
+                for c in candles
+            ],
         }
         results.append(item)
 
