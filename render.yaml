@@ -6,7 +6,7 @@ services:
     name: elliott-focused-viewer
     runtime: python
     plan: free
-    rootDir: 지정종목_뷰어
+    rootDir: focused_viewer
     buildCommand: pip install -r requirements-web.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 180
     healthCheckPath: /api/status

@@ -40,17 +40,26 @@ git push -u origin main
 
 **Actions** 탭 → **Focused Coin Scan (지정종목)** → **Run workflow**
 
-성공하면 `지정종목_뷰어/data/latest.json` 이 자동 커밋됩니다.
+성공하면 `focused_viewer/data/latest.json` 이 자동 커밋됩니다.
 
 ---
 
-## 2단계: Render에 배포 (5분)
+## 2단계: Render에 배포 (1분)
 
-1. [render.com](https://render.com) 가입 (GitHub 연동)
-2. **New** → **Blueprint** (또는 **Web Service**)
-3. 이 GitHub 저장소 연결
-4. `render.yaml` 이 자동 인식되면 **Apply**
-5. 배포 완료 후 URL 확인: `https://elliott-focused-viewer.onrender.com` (이름은 가변)
+**원클릭 배포 (추천):**  
+https://render.com/deploy?repo=https://github.com/JimProKing/elliott-wave-scanner
+
+1. 위 링크 클릭 → Render 로그인 (GitHub 연동 계정)
+2. Blueprint 미리보기 확인 → **Apply** 클릭
+3. 배포 완료 후 URL 확인: `https://elliott-focused-viewer.onrender.com`
+
+**API로 자동 배포 (선택):**
+```bash
+cd focused_viewer
+set RENDER_API_KEY=rnd_여기에_키입력
+python deploy_render.py
+```
+Render API Key: Dashboard → Account Settings → API Keys
 
 ### Render 무료 플랜 참고
 
@@ -72,7 +81,7 @@ Render 대시보드 → 서비스 → **Settings** → **Custom Domains**
 
 ### A. Railway / Fly.io
 
-`지정종목_뷰어` 폴더를 루트로 지정하고:
+`focused_viewer` 폴더를 루트로 지정하고:
 
 ```bash
 pip install -r requirements-web.txt
@@ -84,7 +93,7 @@ gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 180
 ### B. VPS (AWS Lightsail, Oracle Free Tier 등)
 
 ```bash
-cd 지정종목_뷰어
+cd focused_viewer
 pip install -r requirements-web.txt
 WEB_DEPLOY=1 python app.py --server
 ```
@@ -96,7 +105,7 @@ WEB_DEPLOY=1 python app.py --server
 로컬 서버를 터널로 공개. PC가 꺼지면 서비스 중단.
 
 ```bash
-cd 지정종목_뷰어
+cd focused_viewer
 python app.py --browser
 # 다른 터미널
 ngrok http 5789

@@ -22,10 +22,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r 지정종목_뷰어/requirements-web.txt
+        run: pip install -r focused_viewer/requirements-web.txt
 
       - name: Run focused analysis
-        run: python 지정종목_뷰어/run_scan.py
+        run: python focused_viewer/run_scan.py
         env:
           MPLBACKEND: Agg
 
@@ -33,6 +33,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add 지정종목_뷰어/data/latest.json
+          git add focused_viewer/data/latest.json
           git diff --staged --quiet || git commit -m "chore: update focused coin analysis $(date -u +%Y-%m-%dT%H:%MZ)"
           git push

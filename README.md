@@ -2,6 +2,13 @@
 
 거래량 상위 100개 USDT 페어 대상으로 Elliott Wave 상승 impulse (Wave 3 후보)를 스캔하는 도구입니다.
 
+## Render 웹 배포 (거래량 상위 20 종목 뷰어)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JimProKing/elliott-wave-scanner)
+
+위 버튼 클릭 → Render 로그인 → **Apply** 한 번이면 `focused_viewer` 앱이 배포됩니다.
+배포 후 URL 예: `https://elliott-focused-viewer.onrender.com`
+
 **특징**
 - GitHub Actions로 자동 실행 (4시간마다)
 - 결과를 `results/latest.json` + `latest.md` 로 커밋
