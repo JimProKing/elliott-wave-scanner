@@ -13,6 +13,11 @@
         .coin-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
         .coin-card.active { ring: 2px; border-color: #38bdf8; }
         #detail-panel { max-height: calc(100vh - 2rem); overflow-y: auto; }
+        .scroll-area {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
         .scrollbar-thin::-webkit-scrollbar { width: 6px; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
 
@@ -26,17 +31,30 @@
 
         .app-shell { height: 100dvh; height: 100vh; }
         @media (max-width: 767px) {
+            html, body {
+                overflow-x: hidden;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                height: auto;
+                min-height: 100dvh;
+            }
             .app-shell {
                 display: block;
-                overflow: hidden;
+                overflow: visible;
+                height: auto;
+                min-height: 100dvh;
             }
             #sidebar-panel {
                 width: 100%;
                 max-width: 100%;
-                height: 100%;
-                min-height: 0;
+                height: auto;
+                min-height: 100dvh;
                 display: flex;
                 flex-direction: column;
+            }
+            #coin-list {
+                flex: none;
+                overflow: visible;
             }
             #main-panel {
                 position: fixed;
@@ -45,6 +63,9 @@
                 width: 100%;
                 max-width: 100%;
                 flex: none;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
                 transform: translateX(100%);
                 transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
                 background: #020617;
@@ -52,12 +73,16 @@
                 padding-bottom: env(safe-area-inset-bottom, 0px);
             }
             #main-panel.mobile-open { transform: translateX(0); }
-            #detail-panel { max-height: none; }
+            #detail-panel {
+                max-height: none;
+                flex: 1 1 auto;
+                min-height: 0;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen overflow-hidden">
-    <div class="app-shell flex flex-row overflow-hidden">
+<body class="bg-slate-950 text-slate-200 min-h-screen md:overflow-hidden">
+    <div class="app-shell flex flex-row md:overflow-hidden">
         <!-- 좌측: 종목 목록 -->
         <aside id="sidebar-panel" class="w-full md:w-[420px] lg:w-[460px] flex-shrink-0 md:border-r border-slate-800 flex flex-col bg-slate-900/50 min-h-0 min-w-0">
             <header class="p-4 border-b border-slate-800">
@@ -129,7 +154,7 @@
             </div>
 
             <!-- 종목 카드 리스트 -->
-            <div id="coin-list" class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+            <div id="coin-list" class="flex-1 min-h-0 overflow-y-auto scroll-area scrollbar-thin p-3 space-y-2">
                 <div class="text-center text-slate-500 py-8 text-sm">분석 결과를 불러오는 중...</div>
             </div>
 
@@ -174,7 +199,7 @@
                 </div>
             </div>
 
-            <div id="detail-panel" class="hidden flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto scrollbar-thin min-h-0">
+            <div id="detail-panel" class="hidden flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto scroll-area scrollbar-thin min-h-0">
                 <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                     <div>
                         <h2 id="detail-title" class="text-2xl font-bold text-white"></h2>
@@ -331,18 +356,30 @@
         let isScanning = false;
         const hasMpl = {{ 'true' if has_mpl else 'false' }};
 
+        function lockPageScroll() {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
+
+        function unlockPageScroll() {
+            if (document.getElementById('main-panel').classList.contains('mobile-open')) return;
+            if (document.getElementById('about-modal').classList.contains('about-open')) return;
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+
         function openAbout() {
             const modal = document.getElementById('about-modal');
             modal.classList.remove('about-closed');
             modal.classList.add('about-open');
-            document.body.style.overflow = 'hidden';
+            lockPageScroll();
         }
 
         function closeAbout() {
             const modal = document.getElementById('about-modal');
             modal.classList.remove('about-open');
             modal.classList.add('about-closed');
-            document.body.style.overflow = '';
+            unlockPageScroll();
         }
 
         document.addEventListener('keydown', (e) => {
@@ -360,14 +397,12 @@
             if (!isMobileView()) return;
             document.getElementById('main-panel').classList.add('mobile-open');
             document.getElementById('mobile-detail-title').textContent = title || '';
-            document.body.style.overflow = 'hidden';
+            lockPageScroll();
         }
 
         function closeMobileDetail() {
             document.getElementById('main-panel').classList.remove('mobile-open');
-            if (!document.getElementById('about-modal').classList.contains('about-open')) {
-                document.body.style.overflow = '';
-            }
+            unlockPageScroll();
         }
 
         window.addEventListener('resize', () => {
