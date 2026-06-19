@@ -477,18 +477,23 @@
             return 'bg-slate-800 text-slate-300 border border-slate-700';
         }
 
+        function updateLastUpdated(data, prefix = '마지막') {
+            const updated = document.getElementById('last-updated');
+            if (data?.generated_at) {
+                const when = new Date(data.generated_at).toLocaleString('ko-KR');
+                const count = data.coin_count != null ? ` · ${data.coin_count}종목` : '';
+                updated.textContent = `${prefix}: ${when}${count}`;
+            } else {
+                updated.textContent = '저장된 결과 없음';
+            }
+        }
+
         async function loadResults() {
             try {
                 const res = await fetch('/api/latest?t=' + Date.now());
                 const data = await res.json();
                 allResults = data.results || [];
-
-                const updated = document.getElementById('last-updated');
-                if (data.generated_at) {
-                    updated.textContent = '마지막: ' + new Date(data.generated_at).toLocaleString('ko-KR');
-                } else {
-                    updated.textContent = '저장된 결과 없음';
-                }
+                updateLastUpdated(data);
                 if (data.pool) {
                     document.getElementById('pool-desc').textContent = data.pool;
                 }
@@ -704,19 +709,40 @@
                 if (!scanRes.ok || scanData.success === false) {
                     throw new Error(scanData.message || `HTTP ${scanRes.status}`);
                 }
+                let sawScanning = false;
+                let waitedMs = 0;
                 const poll = setInterval(async () => {
-                    const st = await (await fetch('/api/status')).json();
-                    if (!st.scanning) {
+                    waitedMs += 2000;
+                    const st = await (await fetch('/api/status?t=' + Date.now())).json();
+                    if (st.scanning) sawScanning = true;
+
+                    if (sawScanning && !st.scanning) {
                         clearInterval(poll);
                         isScanning = false;
                         document.getElementById('scan-text').textContent = '지금 분석 실행';
                         document.getElementById('btn-scan').disabled = false;
                         document.getElementById('btn-scan').classList.remove('opacity-60');
-                        document.getElementById('status-line').textContent = st.last_error
-                            ? '오류: ' + formatScanError(st.last_error) : '완료!';
+                        if (st.last_error) {
+                            document.getElementById('status-line').textContent = '오류: ' + formatScanError(st.last_error);
+                        } else {
+                            document.getElementById('status-line').textContent =
+                                `완료! ${st.coin_count || 0}종목 · ${st.generated_at ? new Date(st.generated_at).toLocaleString('ko-KR') : ''}`;
+                            document.getElementById('report-select').value = '';
+                            updateLastUpdated(st, '방금 분석');
+                        }
                         await loadResults();
                         await loadReports();
-                        setTimeout(() => { document.getElementById('status-line').textContent = ''; }, 3000);
+                        setTimeout(() => { document.getElementById('status-line').textContent = ''; }, 5000);
+                        return;
+                    }
+
+                    if (!sawScanning && waitedMs >= 180000) {
+                        clearInterval(poll);
+                        isScanning = false;
+                        document.getElementById('scan-text').textContent = '지금 분석 실행';
+                        document.getElementById('btn-scan').disabled = false;
+                        document.getElementById('btn-scan').classList.remove('opacity-60');
+                        document.getElementById('status-line').textContent = '분석이 시작되지 않았거나 시간이 초과되었습니다.';
                     }
                 }, 2000);
             } catch (e) {
@@ -737,8 +763,11 @@
                 reports.forEach(r => {
                     const opt = document.createElement('option');
                     opt.value = r.filename;
-                    const d = r.generated_at ? new Date(r.generated_at).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : r.filename;
-                    opt.textContent = d;
+                    const when = r.generated_at
+                        ? new Date(r.generated_at).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+                        : r.filename;
+                    const tag = r.label ? `${r.label} ` : '';
+                    opt.textContent = `${tag}${when}`;
                     sel.appendChild(opt);
                 });
             } catch (e) { console.error(e); }
@@ -761,7 +790,8 @@
                     showDetail(allResults[0]);
                 }
             }
-            document.getElementById('last-updated').textContent = '로드: ' + filename;
+            updateLastUpdated(data, '로드');
+            document.getElementById('report-select').value = filename;
         }
 
         loadResults();

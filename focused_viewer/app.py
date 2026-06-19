@@ -138,6 +138,8 @@ def api_status():
         "last_error": _cache.get("last_error"),
         "has_data": data is not None,
         "generated_at": data.get("generated_at") if data else None,
+        "coin_count": len(data.get("results", [])) if data else 0,
+        "source_file": data.get("source_file") if data else None,
     })
 
 
@@ -188,13 +190,15 @@ def api_scan():
     interval = request.form.get("interval", "4h")
     lookback = int(request.form.get("lookback", 110))
 
+    _cache["scanning"] = True
+    _cache["last_error"] = None
+
     def _do_scan():
-        _cache["scanning"] = True
-        _cache["last_error"] = None
         try:
             if IS_PRODUCTION:
                 os.environ["WEB_DEPLOY"] = "1"
             result = run_analysis(interval=interval, lookback=lookback, save=not IS_PRODUCTION)
+            result["source_file"] = result.get("history_file") or "data/latest.json"
             _cache["data"] = result
         except Exception as e:
             _cache["last_error"] = str(e)
@@ -210,9 +214,10 @@ def api_reports():
     return jsonify(list_saved_reports())
 
 
-@app.route("/api/report/<filename>")
+@app.route("/api/report/<path:filename>")
 def api_report(filename: str):
-    data = load_report(filename)
+    cached = _cache.get("data")
+    data = load_report(filename, prefer_cache=cached if filename in ("data/latest.json", "latest.json") else None)
     if not data:
         return jsonify({"error": "파일 없음"}), 404
     _cache["data"] = data

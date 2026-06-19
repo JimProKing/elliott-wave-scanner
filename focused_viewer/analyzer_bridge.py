@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 _APP_DIR = Path(__file__).resolve().parent
 _DATA_DIR = _APP_DIR / "data"
 _DATA_FILE = _DATA_DIR / "latest.json"
+_HISTORY_DIR = _DATA_DIR / "history"
 
 # vendor(배포용) → 바이낸스 폴더(로컬 개발) 순으로 탐색
 _VENDOR_DIR = _APP_DIR / "vendor"
@@ -63,6 +64,18 @@ def save_to_data_file(payload: Dict) -> Path:
     return _DATA_FILE
 
 
+def save_scan_history(payload: Dict) -> Optional[Path]:
+    """웹/로컬 스캔마다 타임스탬프 스냅샷 저장 (이전 리포트 드롭다운용)."""
+    if not payload.get("results"):
+        return None
+    _HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = _HISTORY_DIR / f"scan_{ts}.json"
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    return path
+
+
 def run_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT_TOP_N, save: bool = True) -> Dict:
     results = run_focused_analysis(interval=interval, lookback=lookback, top_n=top_n)
     saved_path = None
@@ -79,6 +92,9 @@ def run_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT
 
     if results:
         save_to_data_file(payload)
+        history_path = save_scan_history(payload)
+        if history_path:
+            payload["history_file"] = f"history/{history_path.name}"
         if save and not os.environ.get("WEB_DEPLOY"):
             saved_path = str(save_reports(results, top_n=top_n))
 
@@ -106,43 +122,76 @@ def load_latest_saved() -> Optional[Dict]:
         return data
 
 
+def _read_generated_at(path: Path) -> Optional[str]:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("generated_at")
+    except Exception:
+        return None
+
+
 def list_saved_reports(limit: int = 10) -> List[Dict]:
-    items = []
+    items: List[Dict] = []
+    seen: set[str] = set()
+
+    def _add(filename: str, generated_at: Optional[str], *, is_live: bool, label: str = "") -> None:
+        if filename in seen:
+            return
+        seen.add(filename)
+        items.append({
+            "filename": filename,
+            "generated_at": generated_at,
+            "is_live": is_live,
+            "label": label,
+        })
+
+    if _HISTORY_DIR.exists():
+        for f in sorted(_HISTORY_DIR.glob("scan_*.json"), reverse=True):
+            generated_at = _read_generated_at(f)
+            _add(f"history/{f.name}", generated_at, is_live=False, label="스캔")
+
     if _DATA_FILE.exists():
-        try:
-            mtime = datetime.fromtimestamp(_DATA_FILE.stat().st_mtime)
-            items.append({
-                "filename": "data/latest.json",
-                "generated_at": mtime.isoformat(),
-                "is_live": True,
-            })
-        except Exception:
-            pass
+        generated_at = _read_generated_at(_DATA_FILE)
+        _add("data/latest.json", generated_at, is_live=True, label="최신")
 
     if RESULTS_DIR.exists():
-        for f in sorted(RESULTS_DIR.glob("*_지정종목_엘리어트_분석.json"), reverse=True)[:limit]:
+        for f in sorted(RESULTS_DIR.glob("*_지정종목_엘리어트_분석.json"), reverse=True):
             try:
                 ts = f.stem.split("_")[0] + "_" + f.stem.split("_")[1]
                 dt = datetime.strptime(ts, "%Y%m%d_%H%M")
                 generated_at = dt.isoformat()
             except Exception:
-                generated_at = None
-            items.append({
-                "filename": f.name,
-                "generated_at": generated_at,
-                "is_live": False,
-            })
+                generated_at = _read_generated_at(f)
+            _add(f.name, generated_at, is_live=False, label="아카이브")
+
+    items.sort(key=lambda x: x.get("generated_at") or "", reverse=True)
     return items[:limit]
 
 
-def load_report(filename: str) -> Optional[Dict]:
+def load_report(filename: str, *, prefer_cache: Optional[Dict] = None) -> Optional[Dict]:
     if filename in ("data/latest.json", "latest.json"):
+        if prefer_cache and prefer_cache.get("results"):
+            data = _normalize_payload(dict(prefer_cache))
+            data["source_file"] = prefer_cache.get("source_file") or "memory/cache"
+            return data
         return load_latest_saved()
+
+    if filename.startswith("history/"):
+        path = _DATA_DIR / filename
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                data = _normalize_payload(json.load(f))
+                data["source_file"] = filename
+                return data
+        return None
+
     path = RESULTS_DIR / filename
     if not path.exists():
         return None
     with open(path, "r", encoding="utf-8") as f:
-        return _normalize_payload(json.load(f))
+        data = _normalize_payload(json.load(f))
+        data["source_file"] = filename
+        return data
 
 
 def get_coin_candles(symbol: str, interval: str = "4h", limit: int = 110) -> List[Dict]:
