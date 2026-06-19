@@ -29,6 +29,23 @@
         #about-modal.about-closed #about-panel { transform: scale(0.94) translateY(12px); opacity: 0; }
         .about-feature { background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); }
 
+        .chart-viewport { min-height: 360px; }
+        .chart-viewport img { width: 100%; height: auto; display: block; }
+        @media (max-width: 767px) {
+            .chart-viewport {
+                width: 100%;
+                height: 50dvh;
+                min-height: 50dvh;
+                max-height: 58dvh;
+            }
+            .chart-viewport img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                object-position: center;
+            }
+        }
+
         .app-shell { height: 100dvh; height: 100vh; }
         @media (max-width: 767px) {
             html, body {
@@ -241,7 +258,7 @@
                         </div>
                         <div id="chart-caption" class="text-xs text-sky-300 font-medium"></div>
                     </div>
-                    <div id="chart-container" class="w-full min-h-[300px] md:min-h-[420px] flex items-center justify-center">
+                    <div id="chart-container" class="chart-viewport w-full flex items-center justify-center">
                         <div class="text-slate-500 text-sm">차트 로딩 중...</div>
                     </div>
                 </div>
@@ -389,8 +406,23 @@
             }
         });
 
+        const CHART_HEIGHT_VH = 0.50;
+
         function isMobileView() {
             return window.matchMedia('(max-width: 767px)').matches;
+        }
+
+        function getChartViewport() {
+            if (!isMobileView()) return null;
+            const vw = Math.round(window.innerWidth);
+            const vh = Math.round(window.innerHeight * CHART_HEIGHT_VH);
+            return { vw, vh };
+        }
+
+        function getChartQueryParams() {
+            const vp = getChartViewport();
+            if (!vp) return '';
+            return `&mobile=1&vw=${vp.vw}&vh=${vp.vh}`;
         }
 
         function openMobileDetail(title) {
@@ -609,12 +641,11 @@
             container.innerHTML = '<div class="text-slate-500 text-sm"><i class="fa-solid fa-spinner fa-spin"></i> 차트 생성 중...</div>';
             caption.textContent = '';
             try {
-                const mobileQ = isMobileView() ? '&mobile=1' : '';
-                const res = await fetch(`/api/chart-b64/${encodeURIComponent(symbol)}?t=${Date.now()}${mobileQ}`);
+                const res = await fetch(`/api/chart-b64/${encodeURIComponent(symbol)}?t=${Date.now()}${getChartQueryParams()}`);
                 const data = await parseJsonResponse(res);
                 if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
                 caption.textContent = data.caption || '';
-                container.innerHTML = `<img src="data:image/png;base64,${data.image}" class="w-full h-auto block rounded-lg" alt="chart">`;
+                container.innerHTML = `<img src="data:image/png;base64,${data.image}" class="rounded-lg" alt="chart">`;
             } catch (e) {
                 container.innerHTML = `<div class="text-red-400 text-sm">차트 오류: ${e.message}</div>`;
             }

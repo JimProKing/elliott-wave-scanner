@@ -9,6 +9,46 @@ from typing import Dict, List, Optional
 
 CHART_DISPLAY_DAYS = 3
 CHART_MIN_CANDLES = 8
+CHART_DPI = 150
+
+
+def _figure_layout(
+    *,
+    mobile: bool,
+    viewport_w: Optional[int] = None,
+    viewport_h: Optional[int] = None,
+) -> tuple[float, float, int, dict]:
+    """Return matplotlib figsize (inches), dpi, and font metrics."""
+    dpi = CHART_DPI
+
+    if mobile and viewport_w and viewport_h and viewport_w > 200 and viewport_h > 160:
+        fig_w = max(6.0, min(18.0, viewport_w / dpi))
+        fig_h = max(5.0, min(18.0, viewport_h / dpi))
+        scale = min(fig_w, fig_h) / 7.5
+        metrics = {
+            "title_fs": max(11, 12 * scale),
+            "ylabel_fs": max(10, 11 * scale),
+            "tick_fs": max(9, 10 * scale),
+            "legend_fs": max(8, 9 * scale),
+            "foot_fs": max(8, 9 * scale),
+            "line_w": max(2.0, 2.3 * scale),
+        }
+        return fig_w, fig_h, dpi, metrics
+
+    if mobile:
+        fig_w, fig_h = 10.0, 9.0
+        metrics = {
+            "title_fs": 13, "ylabel_fs": 11, "tick_fs": 10,
+            "legend_fs": 9, "foot_fs": 9, "line_w": 2.4,
+        }
+        return fig_w, fig_h, dpi, metrics
+
+    fig_w, fig_h = 14.0, 7.5
+    metrics = {
+        "title_fs": 14, "ylabel_fs": 12, "tick_fs": 11,
+        "legend_fs": 10, "foot_fs": 10, "line_w": 2.6,
+    }
+    return fig_w, fig_h, dpi, metrics
 
 try:
     import matplotlib
@@ -51,6 +91,8 @@ def generate_chart_bytes(
     *,
     display_days: int = CHART_DISPLAY_DAYS,
     mobile: bool = False,
+    viewport_w: Optional[int] = None,
+    viewport_h: Optional[int] = None,
 ) -> Optional[bytes]:
     if not HAS_MPL:
         return None
@@ -69,14 +111,15 @@ def generate_chart_bytes(
     highs = [c["high"] for c in candles]
     lows = [c["low"] for c in candles]
 
-    if mobile:
-        fig_w, fig_h, dpi = 10, 9, 150
-        title_fs, ylabel_fs, tick_fs, legend_fs, foot_fs = 13, 11, 10, 9, 9
-        line_w = 2.4
-    else:
-        fig_w, fig_h, dpi = 14, 7.5, 150
-        title_fs, ylabel_fs, tick_fs, legend_fs, foot_fs = 14, 12, 11, 10, 10
-        line_w = 2.6
+    fig_w, fig_h, dpi, m = _figure_layout(
+        mobile=mobile, viewport_w=viewport_w, viewport_h=viewport_h
+    )
+    title_fs = m["title_fs"]
+    ylabel_fs = m["ylabel_fs"]
+    tick_fs = m["tick_fs"]
+    legend_fs = m["legend_fs"]
+    foot_fs = m["foot_fs"]
+    line_w = m["line_w"]
 
     fig, ax = plt.subplots(figsize=(fig_w, fig_h), facecolor="#0f172a")
     ax.set_facecolor("#1e293b")
