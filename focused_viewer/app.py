@@ -51,7 +51,10 @@ SCAN_SECRET = os.environ.get("SCAN_SECRET", "")
 
 
 def _public_result(row: dict) -> dict:
-    return {k: v for k, v in row.items() if k not in ("chart_candles", "candles")}
+    return {
+        k: v for k, v in row.items()
+        if k not in ("chart_candles", "chart_display_candles", "candles")
+    }
 
 
 def _is_strong_long(row: dict) -> bool:
@@ -148,6 +151,20 @@ def api_latest():
     return jsonify(_serialize_results(data or {}))
 
 
+@app.route("/api/reload", methods=["POST"])
+def api_reload():
+    """디스크의 latest.json을 다시 읽어 캐시 갱신."""
+    _cache["data"] = None
+    saved = load_latest_saved()
+    if saved:
+        _cache["data"] = saved
+    return jsonify({
+        "success": bool(saved),
+        "generated_at": saved.get("generated_at") if saved else None,
+        "coin_count": len(saved.get("results", [])) if saved else 0,
+    })
+
+
 @app.route("/api/scan", methods=["POST"])
 def api_scan():
     if SCAN_SECRET:
@@ -205,13 +222,12 @@ def api_chart(symbol: str):
     if not coin:
         return "종목 없음", 404
 
-    interval = data.get("interval", "4h")
-    candles, err = resolve_chart_candles(
-        coin, symbol, interval=interval, limit=110, allow_live_fetch=not IS_PRODUCTION
+    candles, err, chart_interval, chart_days = resolve_chart_candles(
+        coin, symbol, allow_live_fetch=not IS_PRODUCTION
     )
     if err:
         return err, 503 if IS_PRODUCTION else 500
-    png = generate_chart_bytes(candles, coin, interval=interval)
+    png = generate_chart_bytes(candles, coin, interval=chart_interval, display_days=chart_days)
     if not png:
         return "차트 생성 실패", 500
     return send_file(BytesIO(png), mimetype="image/png")
@@ -219,28 +235,36 @@ def api_chart(symbol: str):
 
 @app.route("/api/chart-b64/<symbol>")
 def api_chart_b64(symbol: str):
-    if not HAS_MPL:
-        return jsonify({"error": "matplotlib 미설치"}), 400
+    try:
+        if not HAS_MPL:
+            return jsonify({"error": "matplotlib 미설치"}), 400
 
-    data = _cache.get("data") or load_latest_saved()
-    if not data:
-        return jsonify({"error": "데이터 없음"}), 404
+        data = _cache.get("data") or load_latest_saved()
+        if not data:
+            return jsonify({"error": "데이터 없음"}), 404
 
-    coin = next((r for r in data.get("results", []) if r["symbol"].upper() == symbol.upper()), None)
-    if not coin:
-        return jsonify({"error": "종목 없음"}), 404
+        coin = next((r for r in data.get("results", []) if r["symbol"].upper() == symbol.upper()), None)
+        if not coin:
+            return jsonify({"error": "종목 없음"}), 404
 
-    interval = data.get("interval", "4h")
-    candles, err = resolve_chart_candles(
-        coin, symbol, interval=interval, limit=110, allow_live_fetch=not IS_PRODUCTION
-    )
-    if err:
-        return jsonify({"error": err}), 503 if IS_PRODUCTION else 500
-    png = generate_chart_bytes(candles, coin, interval=interval)
-    b64 = chart_to_base64(png)
-    if not b64:
-        return jsonify({"error": "차트 생성 실패 (matplotlib)"}), 500
-    return jsonify({"image": b64, "symbol": symbol})
+        candles, err, chart_interval, chart_days = resolve_chart_candles(
+            coin, symbol, allow_live_fetch=not IS_PRODUCTION
+        )
+        if err:
+            return jsonify({"error": err}), 503 if IS_PRODUCTION else 500
+        png = generate_chart_bytes(candles, coin, interval=chart_interval, display_days=chart_days)
+        b64 = chart_to_base64(png)
+        if not b64:
+            return jsonify({"error": "차트 생성 실패"}), 500
+        return jsonify({
+            "image": b64,
+            "symbol": symbol,
+            "interval": chart_interval,
+            "days": chart_days,
+            "caption": coin.get("overall_bias", ""),
+        })
+    except Exception as e:
+        return jsonify({"error": f"차트 서버 오류: {e}"}), 500
 
 
 def _wait_for_server(timeout: float = 8.0) -> bool:

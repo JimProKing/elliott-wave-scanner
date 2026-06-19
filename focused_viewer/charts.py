@@ -1,205 +1,117 @@
-"""지정종목 엘리어트 분석 차트 생성."""
+"""지정종목 엘리어트 분석 차트 생성 (최근 3일 · 가독성 우선)."""
 
 from __future__ import annotations
 
 import base64
 from datetime import datetime
 from io import BytesIO
-from pathlib import Path
 from typing import Dict, List, Optional
+
+CHART_DISPLAY_DAYS = 3
+CHART_MIN_CANDLES = 8
 
 try:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
-    from matplotlib.patches import Rectangle
     HAS_MPL = True
 except ImportError:
     HAS_MPL = False
 
-_FONT_DIR = Path(__file__).resolve().parent / "fonts"
-_BUNDLED_FONT = _FONT_DIR / "NotoSansKR.ttf"
-_KOREAN_FONT_PROP = None
-_FONT_READY = False
+
+def _bias_label_en(bias: str) -> str:
+    if "강력 롱" in bias:
+        return "Strong LONG"
+    if "강한 롱" in bias:
+        return "LONG bias"
+    if "강력 숏" in bias:
+        return "Strong SHORT"
+    if "강한 숏" in bias:
+        return "SHORT bias"
+    if "상승 Setup" in bias:
+        return "Bull setup"
+    if "하락 Setup" in bias:
+        return "Bear setup"
+    return "Neutral"
 
 
-def _setup_korean_font():
-    """한글 차트 제목용 폰트 (번들 Noto Sans KR → 시스템 폰트 순)."""
-    global _KOREAN_FONT_PROP, _FONT_READY
-    if not HAS_MPL:
-        return None
-    if _FONT_READY:
-        return _KOREAN_FONT_PROP
-
-    import matplotlib.font_manager as fm
-
-    if _BUNDLED_FONT.exists():
-        fm.fontManager.addfont(str(_BUNDLED_FONT))
-        _KOREAN_FONT_PROP = fm.FontProperties(fname=str(_BUNDLED_FONT))
-        plt.rcParams["font.family"] = _KOREAN_FONT_PROP.get_name()
-        plt.rcParams["axes.unicode_minus"] = False
-        _FONT_READY = True
-        return _KOREAN_FONT_PROP
-
-    for name in ("Malgun Gothic", "NanumGothic", "Nanum Gothic", "Noto Sans KR", "AppleGothic"):
-        if name in {f.name for f in fm.fontManager.ttflist}:
-            plt.rcParams["font.family"] = name
-            plt.rcParams["axes.unicode_minus"] = False
-            _KOREAN_FONT_PROP = fm.FontProperties(family=name)
-            _FONT_READY = True
-            return _KOREAN_FONT_PROP
-
-    plt.rcParams["axes.unicode_minus"] = False
-    _FONT_READY = True
-    return None
-
-
-def _find_swings(closes: List[float], window: int = 3, min_move_pct: float = 0.012) -> List[Dict]:
-    raw = []
-    n = len(closes)
-    for i in range(window, n - window):
-        is_high = all(closes[i] > closes[i - k] for k in range(1, window + 1)) and \
-                  all(closes[i] > closes[i + k] for k in range(1, window + 1))
-        is_low = all(closes[i] < closes[i - k] for k in range(1, window + 1)) and \
-                 all(closes[i] < closes[i + k] for k in range(1, window + 1))
-        if is_high:
-            raw.append({"idx": i, "price": closes[i], "type": "high"})
-        elif is_low:
-            raw.append({"idx": i, "price": closes[i], "type": "low"})
-    if not raw:
+def _trim_candles(candles: List[Dict], days: int = CHART_DISPLAY_DAYS, interval: str = "1h") -> List[Dict]:
+    if not candles:
         return []
-    filtered = [raw[0]]
-    for s in raw[1:]:
-        prev = filtered[-1]["price"]
-        if prev > 0 and abs(s["price"] - prev) / prev >= min_move_pct:
-            filtered.append(s)
-    return filtered
-
-
-def _calc_rsi(closes: List[float], period: int = 14) -> List[Optional[float]]:
-    if len(closes) < period + 1:
-        return [None] * len(closes)
-    rsi_vals: List[Optional[float]] = [None] * period
-    gains, losses = [], []
-    for i in range(1, len(closes)):
-        d = closes[i] - closes[i - 1]
-        gains.append(max(d, 0))
-        losses.append(max(-d, 0))
-    for i in range(period, len(closes)):
-        ag = sum(gains[i - period:i]) / period
-        al = sum(losses[i - period:i]) / period
-        if al == 0:
-            rsi_vals.append(100.0)
-        else:
-            rsi_vals.append(100 - (100 / (1 + ag / al)))
-    return rsi_vals
+    hours_per_bar = 1 if interval == "1h" else 4 if interval == "4h" else 1
+    max_bars = max(CHART_MIN_CANDLES, int(days * 24 / hours_per_bar))
+    return candles[-max_bars:]
 
 
 def generate_chart_bytes(
     candles: List[Dict],
     coin_info: Dict,
-    interval: str = "4h",
+    interval: str = "1h",
+    *,
+    display_days: int = CHART_DISPLAY_DAYS,
 ) -> Optional[bytes]:
-    if not HAS_MPL or len(candles) < 20:
+    if not HAS_MPL:
         return None
 
-    font_prop = _setup_korean_font()
+    candles = _trim_candles(candles, days=display_days, interval=interval)
+    if len(candles) < CHART_MIN_CANDLES:
+        return None
 
-    times = [datetime.fromtimestamp(c["open_time"] / 1000) for c in candles]
-    opens = [c["open"] for c in candles]
-    highs = [c["high"] for c in candles]
-    lows = [c["low"] for c in candles]
-    closes = [c["close"] for c in candles]
-    swings = _find_swings(closes)
-    rsi = _calc_rsi(closes)
-
-    kr = coin_info.get("kr", "")
     sym = coin_info.get("symbol", "")
     bull_s = coin_info.get("bull_score", 0)
     bear_s = coin_info.get("bear_score", 0)
-    bias = coin_info.get("overall_bias", "")
+    bias_en = _bias_label_en(coin_info.get("overall_bias", ""))
+
+    times = [datetime.fromtimestamp(c["open_time"] / 1000) for c in candles]
+    closes = [c["close"] for c in candles]
+    highs = [c["high"] for c in candles]
+    lows = [c["low"] for c in candles]
+
+    fig, ax = plt.subplots(figsize=(12, 5), facecolor="#0f172a")
+    ax.set_facecolor("#1e293b")
+    for spine in ax.spines.values():
+        spine.set_color("#334155")
+    ax.tick_params(colors="#cbd5e1", labelsize=10)
+    ax.grid(True, alpha=0.2, color="#475569", linestyle="-", linewidth=0.6)
+
+    ax.fill_between(times, lows, highs, color="#334155", alpha=0.35, linewidth=0)
+    ax.plot(times, closes, color="#38bdf8", linewidth=2.2, label="Close", zorder=3)
+
     long_lv = coin_info.get("long_levels", {})
     short_lv = coin_info.get("short_levels", {})
+    price_min, price_max = min(lows), max(highs)
+    margin = (price_max - price_min) * 0.08 or price_max * 0.01
 
-    fig, (ax1, ax2) = plt.subplots(
-        2, 1, figsize=(11, 7),
-        gridspec_kw={"height_ratios": [3, 1]},
-        sharex=True,
-        facecolor="#0f172a",
+    for price, color, label in (
+        (long_lv.get("entry"), "#22c55e", "Long entry"),
+        (long_lv.get("sl"), "#ef4444", "Long SL"),
+        (short_lv.get("entry"), "#f97316", "Short entry"),
+        (short_lv.get("sl"), "#fb7185", "Short SL"),
+    ):
+        if price and price > 0 and price_min - margin <= price <= price_max + margin:
+            ax.axhline(price, color=color, linestyle="--", linewidth=1.4, alpha=0.9, label=label)
+
+    title = f"{sym}  |  Bull {bull_s}  /  Bear {bear_s}  |  {bias_en}"
+    ax.set_title(title, fontsize=13, color="#f8fafc", pad=12, fontweight="bold")
+    ax.set_ylabel("Price (USDT)", color="#94a3b8", fontsize=11)
+
+    if interval == "1h":
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d %H:%M"))
+    else:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha="center", color="#cbd5e1")
+
+    ax.legend(loc="upper left", fontsize=9, framealpha=0.35, facecolor="#0f172a", labelcolor="#e2e8f0")
+    fig.text(
+        0.99, 0.02,
+        f"Last {display_days} days · {interval}",
+        ha="right", va="bottom", fontsize=9, color="#64748b",
     )
-
-    for ax in (ax1, ax2):
-        ax.set_facecolor("#1e293b")
-        ax.tick_params(colors="#94a3b8")
-        for spine in ax.spines.values():
-            spine.set_color("#334155")
-
-    width = 0.6
-    for i, t in enumerate(times):
-        o, h, l, c = opens[i], highs[i], lows[i], closes[i]
-        color = "#22c55e" if c >= o else "#ef4444"
-        ax1.plot([t, t], [l, h], color=color, linewidth=0.8, alpha=0.9)
-        body_bottom = min(o, c)
-        body_h = max(abs(c - o), (h - l) * 0.02)
-        rect = Rectangle(
-            (mdates.date2num(t) - width / 2, body_bottom),
-            width, body_h,
-            facecolor=color, edgecolor=color, alpha=0.85,
-        )
-        ax1.add_patch(rect)
-
-    for s in swings[-10:]:
-        idx = s["idx"]
-        if idx >= len(times):
-            continue
-        t = times[idx]
-        if s["type"] == "high":
-            ax1.scatter(t, s["price"], marker="v", s=70, color="#fbbf24", zorder=5, edgecolors="#0f172a")
-        else:
-            ax1.scatter(t, s["price"], marker="^", s=70, color="#38bdf8", zorder=5, edgecolors="#0f172a")
-
-    level_styles = [
-        (long_lv.get("entry"), "#22c55e", "Long Entry", "-"),
-        (long_lv.get("sl"), "#ef4444", "Long SL", "--"),
-        (long_lv.get("tp1"), "#4ade80", "Long TP1", ":"),
-        (short_lv.get("sl"), "#f87171", "Short SL", "--"),
-        (short_lv.get("tp1"), "#fb923c", "Short TP1", ":"),
-    ]
-    for price, color, label, ls in level_styles:
-        if price and price > 0:
-            ax1.axhline(price, color=color, linestyle=ls, linewidth=1.0, alpha=0.75, label=label)
-
-    title = f"{kr} ({sym})  |  상승 {bull_s}점 / 하락 {bear_s}점  |  {bias}"
-    ax1.set_title(
-        title,
-        fontsize=12,
-        color="#f1f5f9",
-        pad=10,
-        fontproperties=font_prop,
-    )
-    ax1.set_ylabel("Price", color="#94a3b8")
-    ax1.legend(loc="upper left", fontsize=7, framealpha=0.3, facecolor="#1e293b", labelcolor="#e2e8f0")
-    ax1.grid(True, alpha=0.15, color="#475569")
-
-    rsi_x = [t for t, v in zip(times, rsi) if v is not None]
-    rsi_y = [v for v in rsi if v is not None]
-    if rsi_x:
-        ax2.plot(rsi_x, rsi_y, color="#a78bfa", linewidth=1.2)
-        ax2.axhline(70, color="#ef4444", linestyle="--", linewidth=0.8, alpha=0.6)
-        ax2.axhline(30, color="#22c55e", linestyle="--", linewidth=0.8, alpha=0.6)
-        ax2.fill_between(rsi_x, 30, 70, alpha=0.08, color="#a78bfa")
-    ax2.set_ylim(0, 100)
-    ax2.set_ylabel("RSI", color="#94a3b8")
-    ax2.grid(True, alpha=0.15, color="#475569")
-    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d %H:%M"))
-    plt.setp(ax2.xaxis.get_majorticklabels(), rotation=30, ha="right", color="#94a3b8")
-
-    fig.text(0.99, 0.01, f"TF: {interval}", ha="right", va="bottom", fontsize=8, color="#64748b")
     plt.tight_layout()
 
     buf = BytesIO()
-    plt.savefig(buf, format="png", dpi=130, bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.savefig(buf, format="png", dpi=120, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()

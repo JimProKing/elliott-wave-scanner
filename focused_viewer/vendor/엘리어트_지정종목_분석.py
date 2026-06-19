@@ -622,6 +622,19 @@ def fetch_coingecko_simple(coin_id: str = "connex") -> Dict:
         return {}
 
 
+def _compact_display_candles(candles: List[Dict]) -> List[Dict]:
+    return [
+        {
+            "open_time": c["open_time"],
+            "open": c["open"],
+            "high": c["high"],
+            "low": c["low"],
+            "close": c["close"],
+        }
+        for c in candles
+    ]
+
+
 def compute_overall_bias(adj_bull: int, adj_bear: int) -> Tuple[str, str]:
     """종합 바이어스 문구 + favored 방향 (long/short/neutral)."""
     if adj_bull >= 80 and adj_bull > adj_bear + 10:
@@ -755,16 +768,12 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110, top_n: int =
             "favored": favored,
             "long_levels": long_levels,
             "short_levels": short_levels,
-            "chart_candles": [
-                {
-                    "open_time": c["open_time"],
-                    "open": c["open"],
-                    "high": c["high"],
-                    "low": c["low"],
-                    "close": c["close"],
-                }
-                for c in candles
-            ],
+            "chart_candles": _compact_display_candles(candles),
+            "chart_display_candles": _compact_display_candles(
+                fetch_klines(sym, interval="1h", limit=72)
+            ),
+            "chart_display_interval": "1h",
+            "chart_display_days": 3,
         }
         results.append(item)
 

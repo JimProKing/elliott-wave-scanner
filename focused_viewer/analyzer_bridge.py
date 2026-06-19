@@ -149,9 +149,14 @@ def get_coin_candles(symbol: str, interval: str = "4h", limit: int = 110) -> Lis
     return fetch_klines(symbol, interval=interval, limit=limit)
 
 
-def get_saved_chart_candles(coin: Dict, limit: int = 110) -> List[Dict]:
-    """스캔 시 저장된 OHLC 캔들 (웹 배포 차트용)."""
-    saved = coin.get("chart_candles") or coin.get("candles") or []
+def get_saved_chart_candles(coin: Dict, limit: int = 72) -> List[Dict]:
+    """스캔 시 저장된 차트용 OHLC (1h 3일 우선)."""
+    saved = (
+        coin.get("chart_display_candles")
+        or coin.get("chart_candles")
+        or coin.get("candles")
+        or []
+    )
     if not saved:
         return []
     if limit and len(saved) > limit:
@@ -159,26 +164,40 @@ def get_saved_chart_candles(coin: Dict, limit: int = 110) -> List[Dict]:
     return saved
 
 
+def get_chart_display_meta(coin: Dict, data: Optional[Dict] = None) -> tuple[str, int]:
+    interval = coin.get("chart_display_interval") or (data or {}).get("chart_display_interval") or "1h"
+    days = int(coin.get("chart_display_days") or (data or {}).get("chart_display_days") or 3)
+    return interval, days
+
+
 def resolve_chart_candles(
     coin: Dict,
     symbol: str,
-    interval: str = "4h",
-    limit: int = 110,
+    interval: str = "1h",
+    limit: int = 72,
     *,
     allow_live_fetch: bool = True,
-) -> tuple[List[Dict], Optional[str]]:
+) -> tuple[List[Dict], Optional[str], str, int]:
+    chart_interval, chart_days = get_chart_display_meta(coin)
     saved = get_saved_chart_candles(coin, limit=limit)
-    if len(saved) >= 20:
-        return saved, None
+    min_needed = 8
+
+    if len(saved) >= min_needed:
+        return saved, None, chart_interval, chart_days
+
+    # 구버전 4h 데이터: 최근 3일(18봉)만 사용
+    legacy = coin.get("chart_candles") or []
+    if len(legacy) >= min_needed:
+        return legacy[-18:], None, "4h", chart_days
 
     if not allow_live_fetch:
         if saved:
-            return [], f"저장된 캔들 부족 ({len(saved)}개, 최소 20개 필요)"
-        return [], "저장된 캔들 없음 — GitHub Actions 스캔 후 재배포가 필요합니다"
+            return [], f"저장된 캔들 부족 ({len(saved)}개)", chart_interval, chart_days
+        return [], "저장된 캔들 없음 — 새로고침 후에도 안 되면 재배포가 필요합니다", chart_interval, chart_days
 
-    live = get_coin_candles(symbol, interval=interval, limit=limit)
-    if len(live) >= 20:
-        return live, None
+    live = get_coin_candles(symbol, interval=chart_interval, limit=limit)
+    if len(live) >= min_needed:
+        return live, None, chart_interval, chart_days
     if saved:
-        return [], f"캔들 부족 (저장 {len(saved)}개, 실시간 {len(live)}개)"
-    return [], f"캔들 데이터 없음 (실시간 {len(live)}개)"
+        return [], f"캔들 부족 (저장 {len(saved)}개, 실시간 {len(live)}개)", chart_interval, chart_days
+    return [], f"캔들 데이터 없음 (실시간 {len(live)}개)", chart_interval, chart_days

@@ -30,17 +30,29 @@
             </header>
 
             <div class="p-4 space-y-3 border-b border-slate-800">
-                {% if allow_scan %}
-                <button id="btn-scan" onclick="runScan()"
-                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play"></i>
-                    <span id="scan-text">지금 분석 실행</span>
-                </button>
-                {% else %}
-                <div class="w-full py-3 bg-slate-800 rounded-xl text-center text-xs text-slate-400">
-                    <i class="fa-solid fa-clock text-sky-400"></i>
-                    자동 갱신 모드 (GitHub Actions 4시간마다)
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-refresh" onclick="reloadData()"
+                        class="py-2.5 bg-sky-600 hover:bg-sky-500 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span id="refresh-text">새로고침</span>
+                    </button>
+                    {% if allow_scan %}
+                    <button id="btn-scan" onclick="runScan()"
+                        class="py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span id="scan-text">분석 실행</span>
+                    </button>
+                    {% else %}
+                    <button id="btn-scan" onclick="runScan()"
+                        class="py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
+                        title="웹 서버에서는 Binance API가 막혀 있을 수 있습니다">
+                        <i class="fa-solid fa-play"></i>
+                        <span id="scan-text">분석 실행</span>
+                    </button>
+                    {% endif %}
                 </div>
+                {% if not allow_scan %}
+                <p class="text-[10px] text-slate-500 text-center">자동 갱신: GitHub Actions 4시간마다 · 새로고침은 저장된 최신 데이터를 다시 불러옵니다</p>
                 {% endif %}
                 <div id="status-line" class="text-xs text-slate-400 text-center"></div>
                 <div class="flex items-center justify-between text-xs">
@@ -120,11 +132,14 @@
 
                 <!-- 차트 -->
                 <div class="bg-slate-900 rounded-xl border border-slate-800 p-3 mb-4">
-                    <div class="text-xs text-slate-400 mb-2 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-candlestick"></i> 4h 캔들 + 스윙 포인트 + 매매 레벨
-                        {% if not has_mpl %}<span class="text-amber-400">(matplotlib 미설치)</span>{% endif %}
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div class="text-xs text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line"></i> 최근 3일 가격 차트 (1h)
+                            {% if not has_mpl %}<span class="text-amber-400">(matplotlib 미설치)</span>{% endif %}
+                        </div>
+                        <div id="chart-caption" class="text-xs text-sky-300 font-medium"></div>
                     </div>
-                    <div id="chart-container" class="min-h-[280px] flex items-center justify-center">
+                    <div id="chart-container" class="min-h-[220px] flex items-center justify-center">
                         <div class="text-slate-500 text-sm">차트 로딩 중...</div>
                     </div>
                 </div>
@@ -334,25 +349,57 @@
             loadChart(r.symbol);
         }
 
+        async function parseJsonResponse(res) {
+            const text = await res.text();
+            try {
+                return JSON.parse(text);
+            } catch {
+                const snippet = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+                throw new Error(res.ok ? '응답 형식 오류' : `서버 오류 (${res.status})${snippet ? ': ' + snippet : ''}`);
+            }
+        }
+
         async function loadChart(symbol) {
             const container = document.getElementById('chart-container');
+            const caption = document.getElementById('chart-caption');
             if (!hasMpl) {
                 container.innerHTML = '<div class="text-amber-400 text-sm">matplotlib이 필요합니다</div>';
                 return;
             }
             container.innerHTML = '<div class="text-slate-500 text-sm"><i class="fa-solid fa-spinner fa-spin"></i> 차트 생성 중...</div>';
+            caption.textContent = '';
             try {
                 const res = await fetch(`/api/chart-b64/${encodeURIComponent(symbol)}?t=${Date.now()}`);
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
+                const data = await parseJsonResponse(res);
+                if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+                caption.textContent = data.caption || '';
                 container.innerHTML = `<img src="data:image/png;base64,${data.image}" class="w-full rounded-lg" alt="chart">`;
             } catch (e) {
                 container.innerHTML = `<div class="text-red-400 text-sm">차트 오류: ${e.message}</div>`;
             }
         }
 
+        async function reloadData() {
+            const btn = document.getElementById('btn-refresh');
+            const label = document.getElementById('refresh-text');
+            const status = document.getElementById('status-line');
+            btn.disabled = true;
+            label.textContent = '갱신 중...';
+            status.textContent = '최신 데이터를 불러오는 중...';
+            try {
+                await fetch('/api/reload', { method: 'POST' });
+                await loadResults();
+                status.textContent = '새로고침 완료';
+                setTimeout(() => { status.textContent = ''; }, 2500);
+            } catch (e) {
+                status.textContent = '새로고침 실패: ' + e.message;
+            } finally {
+                btn.disabled = false;
+                label.textContent = '새로고침';
+            }
+        }
+
         async function runScan() {
-            if (!{{ 'true' if allow_scan else 'false' }}) return;
             if (isScanning) return;
             isScanning = true;
             document.getElementById('scan-text').textContent = '분석 중... (1~2분)';
@@ -405,6 +452,7 @@
             const data = await res.json();
             allResults = data.results || [];
             selectedSymbol = null;
+            renderStrongSignals(data.strong_long_summary || [], data.strong_short_summary || []);
             renderBullSummary(data.bull_summary || []);
             renderCoinList();
             if (allResults.length) showDetail(allResults[0]);
