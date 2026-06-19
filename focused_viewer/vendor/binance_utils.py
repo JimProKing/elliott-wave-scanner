@@ -14,19 +14,48 @@ Binance Spot Market Utilities (공개 API 사용, API 키 불필요)
 고급 분석 기능은 별도 파일(elliott_wave_scanner.py 등)로 분리되어 있습니다.
 """
 
-import urllib.request
 import json
+import os
 import time
+import urllib.error
+import urllib.request
 from typing import List, Optional, Dict
 
 
-BASE_URL = "https://api.binance.com"
+DEFAULT_BASE_URLS = (
+    "https://data-api.binance.vision",
+    "https://api.binance.com",
+    "https://api1.binance.com",
+    "https://api2.binance.com",
+    "https://api3.binance.com",
+)
+BASE_URL = DEFAULT_BASE_URLS[0]
+_working_base_url: Optional[str] = None
 
 
-def _fetch_json(url: str, max_retries: int = 2) -> dict:
-    """내부용: Binance REST 호출 + 간단 재시도"""
+def _base_urls() -> List[str]:
+    custom = os.environ.get("BINANCE_API_BASE", "").strip().rstrip("/")
+    urls: List[str] = []
+    if custom:
+        urls.append(custom)
+    if _working_base_url and _working_base_url not in urls:
+        urls.append(_working_base_url)
+    for base in DEFAULT_BASE_URLS:
+        if base not in urls:
+            urls.append(base)
+    return urls
+
+
+def _is_region_block_error(err: Exception) -> bool:
+    text = str(err)
+    if isinstance(err, urllib.error.HTTPError) and err.code in (451, 403, 418):
+        return True
+    return any(token in text for token in ("HTTP Error 451", "HTTP Error 403", "HTTP Error 418"))
+
+
+def _fetch_json_once(url: str, max_retries: int = 2) -> dict:
     headers = {"User-Agent": "python-trading-utils/1.0"}
-    last_err = None
+    last_err: Optional[Exception] = None
 
     for attempt in range(max_retries + 1):
         try:
@@ -36,10 +65,49 @@ def _fetch_json(url: str, max_retries: int = 2) -> dict:
                 return json.loads(raw)
         except Exception as e:
             last_err = e
+            if _is_region_block_error(e):
+                raise
             if attempt < max_retries:
                 time.sleep(0.6 * (attempt + 1))
             else:
                 raise RuntimeError(f"Binance API 호출 실패: {url} | {last_err}") from last_err
+
+    raise RuntimeError(f"Binance API 호출 실패: {url}")
+
+
+def _fetch_json(url: str, max_retries: int = 2) -> dict:
+    """내부용: Binance REST 호출 + 엔드포인트 자동 전환."""
+    global _working_base_url, BASE_URL
+
+    if url.startswith("http"):
+        path = "/" + url.split("/", 3)[-1]
+    else:
+        path = url if url.startswith("/") else f"/{url}"
+
+    blocked = False
+    last_err: Optional[Exception] = None
+    for base in _base_urls():
+        full_url = f"{base}{path}"
+        try:
+            data = _fetch_json_once(full_url, max_retries=max_retries)
+            _working_base_url = base
+            BASE_URL = base
+            return data
+        except Exception as e:
+            last_err = e
+            if _is_region_block_error(e):
+                blocked = True
+                continue
+            raise
+
+    if blocked:
+        raise RuntimeError(
+            "Binance API가 이 지역/서버에서 차단되었습니다 (HTTP 451). "
+            "웹 뷰어에서는 '새로고침'으로 저장된 데이터를 불러오세요. "
+            "최신 분석은 GitHub Actions가 4시간마다 자동 갱신합니다."
+        ) from last_err
+
+    raise RuntimeError(f"Binance API 호출 실패: {path} | {last_err}") from last_err
 
 
 def normalize_symbol(symbol: str) -> str:

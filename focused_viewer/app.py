@@ -167,6 +167,16 @@ def api_reload():
 
 @app.route("/api/scan", methods=["POST"])
 def api_scan():
+    disable_scan = os.environ.get("DISABLE_SCAN", "").lower() in ("1", "true", "yes")
+    if disable_scan:
+        return jsonify({
+            "success": False,
+            "message": (
+                "웹 서버에서는 Binance API가 차단될 수 있어 분석 실행이 비활성화되어 있습니다. "
+                "'새로고침'으로 저장된 최신 데이터를 불러오세요."
+            ),
+        }), 503
+
     if SCAN_SECRET:
         key = request.headers.get("X-Scan-Key") or request.form.get("scan_key", "")
         if key != SCAN_SECRET:

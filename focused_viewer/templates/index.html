@@ -132,7 +132,7 @@
                         <span id="scan-text">분석 실행</span>
                     </button>
                     {% else %}
-                    <button id="btn-scan" onclick="runScan()"
+                    <button id="btn-scan" type="button" onclick="showScanDisabledHelp()"
                         class="py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
                         title="웹 서버에서는 Binance API가 막혀 있을 수 있습니다">
                         <i class="fa-solid fa-play"></i>
@@ -372,6 +372,21 @@
         let selectedSymbol = null;
         let isScanning = false;
         const hasMpl = {{ 'true' if has_mpl else 'false' }};
+        const allowScan = {{ 'true' if allow_scan else 'false' }};
+
+        function showScanDisabledHelp() {
+            document.getElementById('status-line').textContent =
+                '웹 서버에서는 Binance API(451) 차단으로 분석 불가 · 새로고침으로 최신 데이터를 불러오세요';
+            setTimeout(() => { document.getElementById('status-line').textContent = ''; }, 5000);
+        }
+
+        function formatScanError(msg) {
+            if (!msg) return msg;
+            if (msg.includes('451') || msg.includes('차단')) {
+                return 'Binance API 지역 차단(451) · 새로고침 버튼을 사용하세요';
+            }
+            return msg;
+        }
 
         function lockPageScroll() {
             document.body.style.overflow = 'hidden';
@@ -672,6 +687,10 @@
         }
 
         async function runScan() {
+            if (!allowScan) {
+                showScanDisabledHelp();
+                return;
+            }
             if (isScanning) return;
             isScanning = true;
             document.getElementById('scan-text').textContent = '분석 중... (1~2분)';
@@ -680,7 +699,11 @@
             document.getElementById('btn-scan').classList.add('opacity-60');
 
             try {
-                await fetch('/api/scan', { method: 'POST' });
+                const scanRes = await fetch('/api/scan', { method: 'POST' });
+                const scanData = await parseJsonResponse(scanRes);
+                if (!scanRes.ok || scanData.success === false) {
+                    throw new Error(scanData.message || `HTTP ${scanRes.status}`);
+                }
                 const poll = setInterval(async () => {
                     const st = await (await fetch('/api/status')).json();
                     if (!st.scanning) {
@@ -689,7 +712,8 @@
                         document.getElementById('scan-text').textContent = '지금 분석 실행';
                         document.getElementById('btn-scan').disabled = false;
                         document.getElementById('btn-scan').classList.remove('opacity-60');
-                        document.getElementById('status-line').textContent = st.last_error ? '오류: ' + st.last_error : '완료!';
+                        document.getElementById('status-line').textContent = st.last_error
+                            ? '오류: ' + formatScanError(st.last_error) : '완료!';
                         await loadResults();
                         await loadReports();
                         setTimeout(() => { document.getElementById('status-line').textContent = ''; }, 3000);
@@ -698,7 +722,9 @@
             } catch (e) {
                 isScanning = false;
                 document.getElementById('scan-text').textContent = '지금 분석 실행';
-                document.getElementById('status-line').textContent = '실패: ' + e.message;
+                document.getElementById('btn-scan').disabled = false;
+                document.getElementById('btn-scan').classList.remove('opacity-60');
+                document.getElementById('status-line').textContent = '실패: ' + formatScanError(e.message);
             }
         }
 
