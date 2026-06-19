@@ -7,7 +7,7 @@ services:
     runtime: python
     plan: free
     rootDir: focused_viewer
-    buildCommand: pip install -r requirements-web.txt
+    buildCommand: python setup_fonts.py && pip install -r requirements-web.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 180
     healthCheckPath: /api/status
     envVars:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 from typing import Dict, List, Optional
 
 try:
@@ -17,19 +18,41 @@ try:
 except ImportError:
     HAS_MPL = False
 
+_FONT_DIR = Path(__file__).resolve().parent / "fonts"
+_BUNDLED_FONT = _FONT_DIR / "NotoSansKR.ttf"
+_KOREAN_FONT_PROP = None
+_FONT_READY = False
+
 
 def _setup_korean_font():
+    """한글 차트 제목용 폰트 (번들 Noto Sans KR → 시스템 폰트 순)."""
+    global _KOREAN_FONT_PROP, _FONT_READY
     if not HAS_MPL:
-        return
+        return None
+    if _FONT_READY:
+        return _KOREAN_FONT_PROP
+
     import matplotlib.font_manager as fm
-    candidates = ["Malgun Gothic", "NanumGothic", "AppleGothic", "DejaVu Sans"]
-    available = {f.name for f in fm.fontManager.ttflist}
-    for name in candidates:
-        if name in available:
+
+    if _BUNDLED_FONT.exists():
+        fm.fontManager.addfont(str(_BUNDLED_FONT))
+        _KOREAN_FONT_PROP = fm.FontProperties(fname=str(_BUNDLED_FONT))
+        plt.rcParams["font.family"] = _KOREAN_FONT_PROP.get_name()
+        plt.rcParams["axes.unicode_minus"] = False
+        _FONT_READY = True
+        return _KOREAN_FONT_PROP
+
+    for name in ("Malgun Gothic", "NanumGothic", "Nanum Gothic", "Noto Sans KR", "AppleGothic"):
+        if name in {f.name for f in fm.fontManager.ttflist}:
             plt.rcParams["font.family"] = name
             plt.rcParams["axes.unicode_minus"] = False
-            return
+            _KOREAN_FONT_PROP = fm.FontProperties(family=name)
+            _FONT_READY = True
+            return _KOREAN_FONT_PROP
+
     plt.rcParams["axes.unicode_minus"] = False
+    _FONT_READY = True
+    return None
 
 
 def _find_swings(closes: List[float], window: int = 3, min_move_pct: float = 0.012) -> List[Dict]:
@@ -81,7 +104,7 @@ def generate_chart_bytes(
     if not HAS_MPL or len(candles) < 20:
         return None
 
-    _setup_korean_font()
+    font_prop = _setup_korean_font()
 
     times = [datetime.fromtimestamp(c["open_time"] / 1000) for c in candles]
     opens = [c["open"] for c in candles]
@@ -148,7 +171,13 @@ def generate_chart_bytes(
             ax1.axhline(price, color=color, linestyle=ls, linewidth=1.0, alpha=0.75, label=label)
 
     title = f"{kr} ({sym})  |  상승 {bull_s}점 / 하락 {bear_s}점  |  {bias}"
-    ax1.set_title(title, fontsize=12, color="#f1f5f9", pad=10)
+    ax1.set_title(
+        title,
+        fontsize=12,
+        color="#f1f5f9",
+        pad=10,
+        fontproperties=font_prop,
+    )
     ax1.set_ylabel("Price", color="#94a3b8")
     ax1.legend(loc="upper left", fontsize=7, framealpha=0.3, facecolor="#1e293b", labelcolor="#e2e8f0")
     ax1.grid(True, alpha=0.15, color="#475569")
