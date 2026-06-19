@@ -227,7 +227,10 @@ def api_chart(symbol: str):
     )
     if err:
         return err, 503 if IS_PRODUCTION else 500
-    png = generate_chart_bytes(candles, coin, interval=chart_interval, display_days=chart_days)
+    mobile = request.args.get("mobile", "").lower() in ("1", "true", "yes")
+    png = generate_chart_bytes(
+        candles, coin, interval=chart_interval, display_days=chart_days, mobile=mobile
+    )
     if not png:
         return "차트 생성 실패", 500
     return send_file(BytesIO(png), mimetype="image/png")
@@ -252,7 +255,10 @@ def api_chart_b64(symbol: str):
         )
         if err:
             return jsonify({"error": err}), 503 if IS_PRODUCTION else 500
-        png = generate_chart_bytes(candles, coin, interval=chart_interval, display_days=chart_days)
+        mobile = request.args.get("mobile", "").lower() in ("1", "true", "yes")
+        png = generate_chart_bytes(
+            candles, coin, interval=chart_interval, display_days=chart_days, mobile=mobile
+        )
         b64 = chart_to_base64(png)
         if not b64:
             return jsonify({"error": "차트 생성 실패"}), 500

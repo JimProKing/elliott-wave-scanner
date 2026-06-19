@@ -50,6 +50,7 @@ def generate_chart_bytes(
     interval: str = "1h",
     *,
     display_days: int = CHART_DISPLAY_DAYS,
+    mobile: bool = False,
 ) -> Optional[bytes]:
     if not HAS_MPL:
         return None
@@ -68,15 +69,24 @@ def generate_chart_bytes(
     highs = [c["high"] for c in candles]
     lows = [c["low"] for c in candles]
 
-    fig, ax = plt.subplots(figsize=(12, 5), facecolor="#0f172a")
+    if mobile:
+        fig_w, fig_h, dpi = 10, 9, 150
+        title_fs, ylabel_fs, tick_fs, legend_fs, foot_fs = 13, 11, 10, 9, 9
+        line_w = 2.4
+    else:
+        fig_w, fig_h, dpi = 14, 7.5, 150
+        title_fs, ylabel_fs, tick_fs, legend_fs, foot_fs = 14, 12, 11, 10, 10
+        line_w = 2.6
+
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h), facecolor="#0f172a")
     ax.set_facecolor("#1e293b")
     for spine in ax.spines.values():
         spine.set_color("#334155")
-    ax.tick_params(colors="#cbd5e1", labelsize=10)
+    ax.tick_params(colors="#cbd5e1", labelsize=tick_fs)
     ax.grid(True, alpha=0.2, color="#475569", linestyle="-", linewidth=0.6)
 
     ax.fill_between(times, lows, highs, color="#334155", alpha=0.35, linewidth=0)
-    ax.plot(times, closes, color="#38bdf8", linewidth=2.2, label="Close", zorder=3)
+    ax.plot(times, closes, color="#38bdf8", linewidth=line_w, label="Close", zorder=3)
 
     long_lv = coin_info.get("long_levels", {})
     short_lv = coin_info.get("short_levels", {})
@@ -93,8 +103,8 @@ def generate_chart_bytes(
             ax.axhline(price, color=color, linestyle="--", linewidth=1.4, alpha=0.9, label=label)
 
     title = f"{sym}  |  Bull {bull_s}  /  Bear {bear_s}  |  {bias_en}"
-    ax.set_title(title, fontsize=13, color="#f8fafc", pad=12, fontweight="bold")
-    ax.set_ylabel("Price (USDT)", color="#94a3b8", fontsize=11)
+    ax.set_title(title, fontsize=title_fs, color="#f8fafc", pad=12, fontweight="bold")
+    ax.set_ylabel("Price (USDT)", color="#94a3b8", fontsize=ylabel_fs)
 
     if interval == "1h":
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d %H:%M"))
@@ -102,16 +112,16 @@ def generate_chart_bytes(
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha="center", color="#cbd5e1")
 
-    ax.legend(loc="upper left", fontsize=9, framealpha=0.35, facecolor="#0f172a", labelcolor="#e2e8f0")
+    ax.legend(loc="upper left", fontsize=legend_fs, framealpha=0.35, facecolor="#0f172a", labelcolor="#e2e8f0")
     fig.text(
         0.99, 0.02,
         f"Last {display_days} days · {interval}",
-        ha="right", va="bottom", fontsize=9, color="#64748b",
+        ha="right", va="bottom", fontsize=foot_fs, color="#64748b",
     )
     plt.tight_layout()
 
     buf = BytesIO()
-    plt.savefig(buf, format="png", dpi=120, bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.savefig(buf, format="png", dpi=dpi, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()

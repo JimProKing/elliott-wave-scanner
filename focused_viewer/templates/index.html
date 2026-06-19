@@ -233,15 +233,15 @@
                 </div>
 
                 <!-- 차트 -->
-                <div class="bg-slate-900 rounded-xl border border-slate-800 p-3 mb-4">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="bg-slate-900 rounded-xl border border-slate-800 p-2 md:p-3 mb-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2 px-0.5">
                         <div class="text-xs text-slate-400 flex items-center gap-2">
                             <i class="fa-solid fa-chart-line"></i> 최근 3일 가격 차트 (1h)
                             {% if not has_mpl %}<span class="text-amber-400">(matplotlib 미설치)</span>{% endif %}
                         </div>
                         <div id="chart-caption" class="text-xs text-sky-300 font-medium"></div>
                     </div>
-                    <div id="chart-container" class="min-h-[220px] flex items-center justify-center">
+                    <div id="chart-container" class="w-full min-h-[300px] md:min-h-[420px] flex items-center justify-center">
                         <div class="text-slate-500 text-sm">차트 로딩 중...</div>
                     </div>
                 </div>
@@ -609,11 +609,12 @@
             container.innerHTML = '<div class="text-slate-500 text-sm"><i class="fa-solid fa-spinner fa-spin"></i> 차트 생성 중...</div>';
             caption.textContent = '';
             try {
-                const res = await fetch(`/api/chart-b64/${encodeURIComponent(symbol)}?t=${Date.now()}`);
+                const mobileQ = isMobileView() ? '&mobile=1' : '';
+                const res = await fetch(`/api/chart-b64/${encodeURIComponent(symbol)}?t=${Date.now()}${mobileQ}`);
                 const data = await parseJsonResponse(res);
                 if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
                 caption.textContent = data.caption || '';
-                container.innerHTML = `<img src="data:image/png;base64,${data.image}" class="w-full rounded-lg" alt="chart">`;
+                container.innerHTML = `<img src="data:image/png;base64,${data.image}" class="w-full h-auto block rounded-lg" alt="chart">`;
             } catch (e) {
                 container.innerHTML = `<div class="text-red-400 text-sm">차트 오류: ${e.message}</div>`;
             }
