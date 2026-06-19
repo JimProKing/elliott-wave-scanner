@@ -17,8 +17,7 @@ services:
         value: "1"
       - key: MPLBACKEND
         value: Agg
+      - key: BINANCE_API_BASE
+        value: "https://data-api.binance.vision"
       - key: DISABLE_SCAN
-        value: "1"
-      # 수동 스캔을 허용하려면 아래 주석 해제 후 Render 대시보드에서 값 설정
-      # - key: SCAN_SECRET
-      #   generateValue: true
+        value: "0"

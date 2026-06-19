@@ -83,7 +83,8 @@ def create_service(owner_id: str) -> dict:
             {"key": "PYTHON_VERSION", "value": "3.11"},
             {"key": "WEB_DEPLOY", "value": "1"},
             {"key": "MPLBACKEND", "value": "Agg"},
-            {"key": "DISABLE_SCAN", "value": "1"},
+            {"key": "BINANCE_API_BASE", "value": "https://data-api.binance.vision"},
+            {"key": "DISABLE_SCAN", "value": "0"},
         ],
     }
     return _api("POST", "/services", payload)
