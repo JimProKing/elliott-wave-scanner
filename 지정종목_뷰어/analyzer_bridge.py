@@ -34,8 +34,9 @@ if str(_MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(_MODULE_DIR))
 
 from 엘리어트_지정종목_분석 import (  # noqa: E402
-    TARGET_COINS,
+    DEFAULT_TOP_N,
     fetch_klines,
+    get_top_volume_coins,
     run_focused_analysis,
     save_reports,
 )
@@ -50,6 +51,8 @@ def _normalize_payload(data: Dict) -> Dict:
         pass
     data.setdefault("interval", "4h")
     data.setdefault("lookback", 110)
+    data.setdefault("top_n", DEFAULT_TOP_N)
+    data.setdefault("pool", f"Binance USDT top {data.get('top_n', DEFAULT_TOP_N)} by 24h volume")
     return data
 
 
@@ -60,22 +63,24 @@ def save_to_data_file(payload: Dict) -> Path:
     return _DATA_FILE
 
 
-def run_analysis(interval: str = "4h", lookback: int = 110, save: bool = True) -> Dict:
-    results = run_focused_analysis(interval=interval, lookback=lookback)
+def run_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT_TOP_N, save: bool = True) -> Dict:
+    results = run_focused_analysis(interval=interval, lookback=lookback, top_n=top_n)
     saved_path = None
 
     payload = {
         "generated_at": datetime.now().isoformat(),
         "interval": interval,
         "lookback": lookback,
-        "coins": [c["kr"] for c in TARGET_COINS],
+        "top_n": top_n,
+        "pool": f"Binance USDT top {top_n} by 24h volume",
+        "coins": [r["symbol"] for r in results],
         "results": results,
     }
 
     if results:
         save_to_data_file(payload)
         if save and not os.environ.get("WEB_DEPLOY"):
-            saved_path = str(save_reports(results))
+            saved_path = str(save_reports(results, top_n=top_n))
 
     return {
         **payload,

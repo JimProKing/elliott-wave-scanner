@@ -2,10 +2,9 @@
 """
 엘리어트 파동 이론 기반 지정종목 상승/하락 분석 프로그램 (Focused Elliott Analyzer)
 
-대상 종목 (사용자 지정):
-- 비트코인 (BTC), 라이트코인 (LTC), 리플 (XRP), 에이다 (ADA)
-- 비트코인캐시 (BCH), 스텔라루멘 (XLM), 지캐시 (ZEC), 호라이즌 (ZEN)
-- 나이트 (NIGHT), 콘엑스 (CONX) - CONX는 CoinGecko 데이터 사용 (Binance 미상장)
+대상 종목:
+- 바이낸스 USDT 페어 중 당일 24h 거래량(quote volume) 상위 N개 (기본 20)
+- 스테이블코인·레버리지 토큰 제외
 
 목표:
 - 기존 범용 스캐너의 "구림" 문제 해결: 좁은 대상 + 상승+하락 양방향 + 더 이론 준수 규칙 기반 분석
@@ -37,20 +36,60 @@ except ImportError:
 
 
 # ============================================================
-# 대상 종목 (고정)
+# 대상 종목 (당일 거래량 상위)
 # ============================================================
-TARGET_COINS = [
-    {"kr": "비트코인",     "sym": "BTCUSDT",   "name": "Bitcoin"},
-    {"kr": "라이트코인",   "sym": "LTCUSDT",   "name": "Litecoin"},
-    {"kr": "리플",         "sym": "XRPUSDT",   "name": "Ripple"},
-    {"kr": "에이다",       "sym": "ADAUSDT",   "name": "Cardano"},
-    {"kr": "비트코인캐시", "sym": "BCHUSDT",   "name": "Bitcoin Cash"},
-    {"kr": "스텔라루멘",   "sym": "XLMUSDT",   "name": "Stellar Lumens"},
-    {"kr": "지캐시",       "sym": "ZECUSDT",   "name": "Zcash"},
-    {"kr": "호라이즌",     "sym": "ZENUSDT",   "name": "Horizen"},
-    {"kr": "나이트",       "sym": "NIGHTUSDT", "name": "Night"},
-    {"kr": "콘엑스",       "sym": "CONX",      "name": "Connex (CONX)"},  # CoinGecko
-]
+DEFAULT_TOP_N = 20
+
+STABLE_BASES = frozenset({
+    "USDC", "FDUSD", "TUSD", "USDE", "DAI", "EUR", "AEUR", "USD1", "USDP", "BUSD", "USDS", "EURI",
+    "RLUSD", "U", "USD", "USDD",
+})
+
+LEVERAGED_SUFFIXES = ("UP", "DOWN", "BULL", "BEAR")
+
+
+def _is_leveraged_token(base: str) -> bool:
+    return any(base.endswith(suffix) and len(base) > len(suffix) + 1 for suffix in LEVERAGED_SUFFIXES)
+
+
+def get_top_volume_coins(top_n: int = DEFAULT_TOP_N) -> List[Dict]:
+    """바이낸스 USDT 페어 24h 거래량 상위 N개."""
+    tickers = get_24h_tickers()
+    pairs: List[Tuple[str, str, float]] = []
+
+    for t in tickers:
+        sym = t.get("symbol", "")
+        if not sym.endswith("USDT"):
+            continue
+        base = sym[:-4]
+        if base in STABLE_BASES:
+            continue
+        if _is_leveraged_token(base):
+            continue
+        try:
+            vol = float(t.get("quoteVolume", 0))
+            if vol <= 0:
+                continue
+            pairs.append((sym, base, vol))
+        except (TypeError, ValueError):
+            continue
+
+    pairs.sort(key=lambda x: x[2], reverse=True)
+
+    coins: List[Dict] = []
+    for rank, (sym, base, vol) in enumerate(pairs[:top_n], start=1):
+        coins.append({
+            "kr": base,
+            "sym": sym,
+            "name": base,
+            "volume_24h": vol,
+            "volume_rank": rank,
+        })
+    return coins
+
+
+# 하위 호환 alias (실제 분석은 get_top_volume_coins() 사용)
+TARGET_COINS: List[Dict] = []
 
 # ============================================================
 # 데이터 페치 (Binance + CoinGecko CONX 지원)
@@ -610,12 +649,17 @@ def get_recommendation(score: int, is_bullish: bool) -> str:
 # ============================================================
 # 메인 분석 루프
 # ============================================================
-def run_focused_analysis(interval: str = "4h", lookback: int = 110) -> List[Dict]:
+def run_focused_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT_TOP_N) -> List[Dict]:
+    target_coins = get_top_volume_coins(top_n)
     print("=" * 64)
-    print("엘리어트 파동 지정종목 상승/하락 분석 (Focused)")
-    print("대상: BTC, LTC, XRP, ADA, BCH, XLM, ZEC, ZEN, NIGHT + CONX (CG)")
+    print("엘리어트 파동 거래량 상위 종목 상승/하락 분석")
+    print(f"대상: 바이낸스 USDT 24h 거래량 상위 {top_n}개")
     print(f"TF: {interval} (주요) + 1d (컨텍스트) | lookback ~{lookback}")
     print("=" * 64)
+
+    if not target_coins:
+        print("  [오류] 거래량 상위 종목을 가져오지 못했습니다.")
+        return []
 
     try:
         tickers = get_24h_tickers()
@@ -624,11 +668,16 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110) -> List[Dict
     except Exception:
         vol_map, change_map = {}, {}
 
+    print("  [선정 종목]")
+    for c in target_coins:
+        vol_m = c.get("volume_24h", vol_map.get(c["sym"], 0)) / 1_000_000
+        print(f"    #{c['volume_rank']:2d} {c['sym']:<12} ${vol_m:.1f}M")
+
     results = []
 
-    for coin in TARGET_COINS:
+    for coin in target_coins:
         kr, sym, eng = coin["kr"], coin["sym"], coin["name"]
-        print(f"  [{kr} / {eng}] 분석 중...")
+        print(f"  [#{coin.get('volume_rank', '?')} {sym}] 분석 중...")
 
         candles = fetch_klines(sym, interval=interval, limit=lookback)
         if len(candles) < 30:
@@ -644,16 +693,6 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110) -> List[Dict
         current = bull["price"]
         vol = vol_map.get(sym, 0) if sym in vol_map else 0
         chg = change_map.get(sym, 0) if sym in change_map else 0
-
-        # CONX 특별: CoinGecko에서 24h/vol 보완
-        if "CONX" in sym.upper():
-            cg = fetch_coingecko_simple("connex")
-            if cg.get("price"):
-                current = cg["price"]
-            if cg.get("change_24h") is not None:
-                chg = round(cg["change_24h"], 2)
-            if cg.get("vol_24h"):
-                vol = cg["vol_24h"]
 
         # 레벨 계산을 위한 최근 의미 swing 추출
         closes = [c["close"] for c in candles]
@@ -704,6 +743,7 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110) -> List[Dict
             "kr": kr,
             "symbol": sym,
             "eng": eng,
+            "volume_rank": coin.get("volume_rank"),
             "current_price": current,
             "change_24h_pct": round(chg, 2),
             "volume_24h": vol,
@@ -782,7 +822,7 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110) -> List[Dict
 # ============================================================
 # 리포트 저장 (txt + md + json)
 # ============================================================
-def save_reports(results: List[Dict]) -> Path:
+def save_reports(results: List[Dict], top_n: int = DEFAULT_TOP_N) -> Path:
     out_dir = Path(__file__).parent / "지정종목_엘리어트분석"
     out_dir.mkdir(exist_ok=True)
 
@@ -794,7 +834,9 @@ def save_reports(results: List[Dict]) -> Path:
     with open(f"{base}.json", "w", encoding="utf-8") as f:
         json.dump({
             "generated_at": now.isoformat(),
-            "coins": [c["kr"] for c in TARGET_COINS],
+            "pool": f"Binance USDT top {top_n} by 24h volume",
+            "top_n": top_n,
+            "coins": [r["symbol"] for r in results],
             "results": results
         }, f, ensure_ascii=False, indent=2)
 
@@ -802,7 +844,7 @@ def save_reports(results: List[Dict]) -> Path:
     with open(f"{base}.txt", "w", encoding="utf-8") as f:
         f.write("# 엘리어트 파동 지정종목 상승/하락 분석 결과\n")
         f.write(f"# 생성: {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write("# 대상: BTC, LTC, XRP, ADA, BCH, XLM, ZEC, ZEN, NIGHT, CONX (CG)\n")
+        f.write(f"# 대상: 바이낸스 USDT 24h 거래량 상위 {top_n}개\n")
         f.write("# TF: 4h 주분석 + 1d 컨텍스트 | 고전 Elliott 규칙 기반 (개선판)\n\n")
 
         # 상승 신호 강한 종목 간략 요약 (상단)
@@ -848,7 +890,7 @@ def save_reports(results: List[Dict]) -> Path:
     with open(f"{base}.md", "w", encoding="utf-8") as f:
         f.write(f"# 엘리어트 파동 지정종목 분석 (상승/하락)\n\n")
         f.write(f"**생성일시**: {now.strftime('%Y-%m-%d %H:%M:%S')}  \n")
-        f.write("**대상**: 비트코인, 라이트코인, 리플, 에이다, 비트코인캐시, 스텔라루멘, 지캐시, 호라이즌, 나이트, 콘엑스  \n")
+        f.write(f"**대상**: 바이낸스 USDT 24h 거래량 상위 {top_n}개  \n")
         f.write("**방법**: 4h 중심 + 일봉 컨텍스트, 고전 Elliott Impulse 규칙 (Wave2 피보나치, Wave3 not shortest, impulse 강도 등)  \n\n")
         f.write("> **면책**: 참고용 도구. 실제 매매는 본인 책임 + 상위 TF 확인 + 리스크 관리.\n\n")
 
@@ -931,12 +973,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="엘리어트 지정종목 상승/하락 분석")
     parser.add_argument("--interval", default="4h", help="기본 분석 TF (기본 4h)")
     parser.add_argument("--lookback", type=int, default=110, help="캔들 수")
+    parser.add_argument("--top", type=int, default=DEFAULT_TOP_N, help="거래량 상위 N개 (기본 20)")
     args = parser.parse_args()
 
-    results = run_focused_analysis(interval=args.interval, lookback=args.lookback)
+    results = run_focused_analysis(interval=args.interval, lookback=args.lookback, top_n=args.top)
 
     if results:
-        save_reports(results)
+        save_reports(results, top_n=args.top)
         print("\n완료. 리포트 파일을 확인하세요.")
     else:
         print("분석 결과가 없습니다.")

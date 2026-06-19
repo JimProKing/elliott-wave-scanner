@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>지정종목 엘리어트 분석 뷰어</title>
+    <title>거래량 상위 종목 엘리어트 분석</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -24,9 +24,9 @@
             <header class="p-4 border-b border-slate-800">
                 <h1 class="text-lg font-bold flex items-center gap-2">
                     <i class="fa-solid fa-wave-square text-sky-400"></i>
-                    지정종목 엘리어트 뷰어
+                    거래량 상위 엘리어트 뷰어
                 </h1>
-                <p class="text-xs text-slate-400 mt-1">BTC · LTC · XRP · ADA · BCH · XLM · ZEC · ZEN · NIGHT · CONX</p>
+                <p id="pool-desc" class="text-xs text-slate-400 mt-1">바이낸스 USDT 거래량 상위 {{ top_n }}개 (당일 기준)</p>
             </header>
 
             <div class="p-4 space-y-3 border-b border-slate-800">
@@ -178,6 +178,9 @@
                 } else {
                     updated.textContent = '저장된 결과 없음';
                 }
+                if (data.pool) {
+                    document.getElementById('pool-desc').textContent = data.pool;
+                }
 
                 renderBullSummary(data.bull_summary || []);
                 renderCoinList();
@@ -220,6 +223,7 @@
                 <div class="coin-card bg-slate-900 border ${active} rounded-xl p-3 cursor-pointer" onclick="selectCoin('${r.symbol}')">
                     <div class="flex justify-between items-center mb-2">
                         <div>
+                            ${r.volume_rank ? `<span class="text-[10px] text-sky-400 mr-1">#${r.volume_rank}</span>` : ''}
                             <span class="font-semibold text-white">${r.kr}</span>
                             <span class="text-xs text-slate-500 ml-1">${r.symbol}</span>
                         </div>

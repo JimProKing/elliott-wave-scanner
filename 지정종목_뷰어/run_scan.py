@@ -26,7 +26,9 @@ def main() -> int:
         "generated_at": result["generated_at"],
         "interval": result["interval"],
         "lookback": result["lookback"],
-        "coins": [r["kr"] for r in result["results"]],
+        "top_n": result.get("top_n", 20),
+        "pool": result.get("pool", "Binance USDT top 20 by 24h volume"),
+        "coins": [r["symbol"] for r in result["results"]],
         "results": result["results"],
         "updated_by": "github-actions",
     }

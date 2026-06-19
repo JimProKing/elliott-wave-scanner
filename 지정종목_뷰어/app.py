@@ -28,7 +28,7 @@ if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
 from analyzer_bridge import (  # noqa: E402
-    TARGET_COINS,
+    DEFAULT_TOP_N,
     get_coin_candles,
     list_saved_reports,
     load_latest_saved,
@@ -62,6 +62,8 @@ def _serialize_results(data: dict) -> dict:
     return {
         "generated_at": data.get("generated_at"),
         "interval": data.get("interval", "4h"),
+        "top_n": data.get("top_n", DEFAULT_TOP_N),
+        "pool": data.get("pool", f"Binance USDT top {data.get('top_n', DEFAULT_TOP_N)} by 24h volume"),
         "source_file": data.get("source_file"),
         "saved_path": data.get("saved_path"),
         "results": results,
@@ -79,7 +81,7 @@ def index():
     disable_scan = os.environ.get("DISABLE_SCAN", "").lower() in ("1", "true", "yes")
     return render_template(
         "index.html",
-        coins=TARGET_COINS,
+        top_n=DEFAULT_TOP_N,
         has_mpl=HAS_MPL,
         allow_scan=not disable_scan,
         is_production=bool(IS_PRODUCTION),
