@@ -622,6 +622,23 @@ def fetch_coingecko_simple(coin_id: str = "connex") -> Dict:
         return {}
 
 
+def compute_overall_bias(adj_bull: int, adj_bear: int) -> Tuple[str, str]:
+    """종합 바이어스 문구 + favored 방향 (long/short/neutral)."""
+    if adj_bull >= 80 and adj_bull > adj_bear + 10:
+        return "강력 롱 추천 (80점↑)", "long"
+    if adj_bear >= 80 and adj_bear > adj_bull + 10:
+        return "강력 숏 추천 (80점↑)", "short"
+    if adj_bull >= 70 and adj_bull > adj_bear + 8:
+        return "강한 롱 추천 (70점↑)", "long"
+    if adj_bear >= 70 and adj_bear > adj_bull + 8:
+        return "강한 숏 추천 (70점↑)", "short"
+    if adj_bull >= 60 and adj_bull > adj_bear:
+        return "상승 Setup 우위 (관찰)", "long"
+    if adj_bear >= 60 and adj_bear > adj_bull:
+        return "하락 Setup 우위 (관찰)", "short"
+    return "양방향 혼조 또는 관망", "neutral"
+
+
 def get_recommendation(score: int, is_bullish: bool) -> str:
     """
     직관적인 점수 기반 추천 문구.
@@ -713,28 +730,7 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110, top_n: int =
         adj_bull = min(100, bull_s + mtf_bull_bonus)
         adj_bear = min(100, bear_s + mtf_bear_bonus)
 
-        # 종합 바이어스
-        if adj_bull >= 80 and adj_bull > adj_bear + 10:
-            bias = "강력 상승 (80점↑) — 강한 롱 추천"
-            favored = "long"
-        elif adj_bear >= 80 and adj_bear > adj_bull + 10:
-            bias = "강력 하락 (80점↑) — 강한 숏 추천"
-            favored = "short"
-        elif adj_bull >= 70 and adj_bull > adj_bear + 8:
-            bias = "강한 상승 우위 — 롱 추천"
-            favored = "long"
-        elif adj_bear >= 70 and adj_bear > adj_bull + 8:
-            bias = "강한 하락 우위 — 숏 추천"
-            favored = "short"
-        elif adj_bull >= 60 and adj_bull > adj_bear:
-            bias = "상승 Setup 우위 (관찰)"
-            favored = "long"
-        elif adj_bear >= 60 and adj_bear > adj_bull:
-            bias = "하락 Setup 우위 (관찰)"
-            favored = "short"
-        else:
-            bias = "양방향 혼조 또는 관망"
-            favored = "neutral"
+        bias, favored = compute_overall_bias(adj_bull, adj_bear)
 
         bull_reco = get_recommendation(adj_bull, True)
         bear_reco = get_recommendation(adj_bear, False)
@@ -775,23 +771,51 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110, top_n: int =
     # =====================================================
     # 제일 위에 상승 신호 강한 애들 간략 요약 (사용자 요청)
     # =====================================================
-    print("\n" + "=" * 64)
-    print("📈 상승 신호 강한 종목 요약 (상승 점수 높은 순, 50점 이상)")
-    print("=" * 64)
+    def _is_strong_long(r: Dict) -> bool:
+        return "롱 추천" in r.get("overall_bias", "")
 
+    def _is_strong_short(r: Dict) -> bool:
+        return "숏 추천" in r.get("overall_bias", "")
+
+    print("\n" + "=" * 64)
+    print("📈 강한 롱 추천 종목 (70점↑, 상승 우위)")
+    print("=" * 64)
+    sorted_long = sorted(
+        [r for r in results if _is_strong_long(r)],
+        key=lambda x: x.get("bull_score", 0),
+        reverse=True,
+    )
+    if sorted_long:
+        for r in sorted_long:
+            print(f"  • {r['kr']} ({r['symbol']}) : {r['bull_score']:3d}점  → {r['overall_bias']}")
+    else:
+        print("  현재 강한 롱 추천 조건에 해당하는 종목이 없습니다.")
+
+    print("\n" + "=" * 64)
+    print("📉 강한 숏 추천 종목 (70점↑, 하락 우위)")
+    print("=" * 64)
+    sorted_short = sorted(
+        [r for r in results if _is_strong_short(r)],
+        key=lambda x: x.get("bear_score", 0),
+        reverse=True,
+    )
+    if sorted_short:
+        for r in sorted_short:
+            print(f"  • {r['kr']} ({r['symbol']}) : {r['bear_score']:3d}점  → {r['overall_bias']}")
+    else:
+        print("  현재 강한 숏 추천 조건에 해당하는 종목이 없습니다.")
+
+    print("\n" + "=" * 64)
+    print("📊 상승 신호 참고 (50점 이상, 점수 순)")
+    print("=" * 64)
     sorted_bull = sorted(
         [r for r in results if r.get("bull_score", 0) >= 50],
         key=lambda x: x.get("bull_score", 0),
-        reverse=True
+        reverse=True,
     )
-
     if sorted_bull:
         for r in sorted_bull:
-            score = r["bull_score"]
-            reco_short = r.get("bull_recommendation", "")
-            # 간략하게: 종목명 | 점수 | 추천 키워드
-            short_reco = reco_short.split("—")[-1].strip() if "—" in reco_short else reco_short[:30]
-            print(f"  • {r['kr']} ({r['symbol']}) : {score:3d}점  → {short_reco}")
+            print(f"  • {r['kr']} ({r['symbol']}) : {r['bull_score']:3d}점  → {r.get('bull_recommendation', '')[:40]}")
     else:
         print("  현재 50점 이상의 뚜렷한 상승 신호가 없습니다.")
 
@@ -934,7 +958,7 @@ def save_reports(results: List[Dict], top_n: int = DEFAULT_TOP_N) -> Path:
             bear_s = r.get('bear_score', r['bearish']['score'])
             bias = r['overall_bias']
             f.write(f"| {r['kr']} | {_format_price(r['current_price'])} | {r['change_24h_pct']:+.1f}% | {rsi_str} | **{bull_s}** | {bear_s} | {bias} |\n")
-        f.write("\n> **해석 가이드**: 80점 이상 = ★★★★★ 강력 추천 (강하게 매수/롱 또는 숏 추천). 70점대 = 강한 신호. 60점대 = Setup 관찰.\n\n")
+        f.write("\n> **해석 가이드**: 80점↑ = 강력 롱/숏 추천. 70점↑ = 강한 롱/숏 추천. 60점대 = Setup 관찰.\n\n")
 
         for r in results:
             bull_s = r.get('bull_score', r['bullish']['score'])

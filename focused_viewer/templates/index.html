@@ -51,9 +51,21 @@
                 </div>
             </div>
 
-            <!-- 상승 신호 요약 -->
+            <!-- 강한 롱/숏 추천 요약 -->
+            <div id="strong-signals" class="px-4 py-3 border-b border-slate-800 space-y-3 hidden">
+                <div id="strong-long-summary" class="hidden">
+                    <div class="text-xs font-semibold text-emerald-300 mb-2"><i class="fa-solid fa-arrow-trend-up"></i> 강한 롱 추천 (70점↑)</div>
+                    <div id="strong-long-list" class="space-y-1 text-xs"></div>
+                </div>
+                <div id="strong-short-summary" class="hidden">
+                    <div class="text-xs font-semibold text-red-300 mb-2"><i class="fa-solid fa-arrow-trend-down"></i> 강한 숏 추천 (70점↑)</div>
+                    <div id="strong-short-list" class="space-y-1 text-xs"></div>
+                </div>
+            </div>
+
+            <!-- 상승 신호 참고 (50점+) -->
             <div id="bull-summary" class="px-4 py-3 border-b border-slate-800 hidden">
-                <div class="text-xs font-semibold text-emerald-400 mb-2"><i class="fa-solid fa-arrow-trend-up"></i> 상승 신호 강함 (50점+)</div>
+                <div class="text-xs font-semibold text-emerald-400 mb-2"><i class="fa-solid fa-chart-line"></i> 상승 신호 참고 (50점+)</div>
                 <div id="bull-summary-list" class="space-y-1 text-xs"></div>
             </div>
 
@@ -154,14 +166,15 @@
 
         function scoreColor(score, isBull) {
             if (score >= 80) return isBull ? 'text-emerald-300' : 'text-red-300';
-            if (score >= 60) return isBull ? 'text-emerald-400' : 'text-red-400';
+            if (score >= 70) return isBull ? 'text-emerald-400' : 'text-red-400';
+            if (score >= 60) return isBull ? 'text-emerald-500' : 'text-red-500';
             if (score >= 50) return 'text-amber-400';
             return 'text-slate-400';
         }
 
         function biasBadgeClass(bias) {
-            if (bias.includes('강력 상승') || bias.includes('강한 상승')) return 'bg-emerald-900/50 text-emerald-300 border border-emerald-700';
-            if (bias.includes('강력 하락') || bias.includes('강한 하락')) return 'bg-red-900/50 text-red-300 border border-red-700';
+            if (bias.includes('롱 추천')) return 'bg-emerald-900/50 text-emerald-300 border border-emerald-700';
+            if (bias.includes('숏 추천')) return 'bg-red-900/50 text-red-300 border border-red-700';
             if (bias.includes('Setup')) return 'bg-amber-900/50 text-amber-300 border border-amber-700';
             return 'bg-slate-800 text-slate-300 border border-slate-700';
         }
@@ -182,6 +195,7 @@
                     document.getElementById('pool-desc').textContent = data.pool;
                 }
 
+                renderStrongSignals(data.strong_long_summary || [], data.strong_short_summary || []);
                 renderBullSummary(data.bull_summary || []);
                 renderCoinList();
 
@@ -193,6 +207,43 @@
                 }
             } catch (e) {
                 console.error(e);
+            }
+        }
+
+        function renderStrongSignals(longSummary, shortSummary) {
+            const box = document.getElementById('strong-signals');
+            const longBox = document.getElementById('strong-long-summary');
+            const shortBox = document.getElementById('strong-short-summary');
+            const longList = document.getElementById('strong-long-list');
+            const shortList = document.getElementById('strong-short-list');
+
+            if (!longSummary.length && !shortSummary.length) {
+                box.classList.add('hidden');
+                return;
+            }
+
+            box.classList.remove('hidden');
+
+            if (longSummary.length) {
+                longBox.classList.remove('hidden');
+                longList.innerHTML = longSummary.map(s =>
+                    `<div class="flex justify-between gap-2 cursor-pointer hover:text-emerald-200" onclick="selectCoin('${s.symbol}')">` +
+                    `<span>${s.kr} (${s.symbol})</span>` +
+                    `<span class="text-emerald-400 font-bold shrink-0">${s.score}점</span></div>`
+                ).join('');
+            } else {
+                longBox.classList.add('hidden');
+            }
+
+            if (shortSummary.length) {
+                shortBox.classList.remove('hidden');
+                shortList.innerHTML = shortSummary.map(s =>
+                    `<div class="flex justify-between gap-2 cursor-pointer hover:text-red-200" onclick="selectCoin('${s.symbol}')">` +
+                    `<span>${s.kr} (${s.symbol})</span>` +
+                    `<span class="text-red-400 font-bold shrink-0">${s.score}점</span></div>`
+                ).join('');
+            } else {
+                shortBox.classList.add('hidden');
             }
         }
 
@@ -236,7 +287,7 @@
                     <div class="flex gap-2 text-xs">
                         <span class="${scoreColor(r.bull_score, true)}">▲ ${r.bull_score}</span>
                         <span class="${scoreColor(r.bear_score, false)}">▼ ${r.bear_score}</span>
-                        <span class="text-slate-500 truncate flex-1 text-right">${r.overall_bias.split(' ')[0]}</span>
+                        <span class="text-slate-500 truncate flex-1 text-right">${r.overall_bias.includes('롱 추천') ? '롱' : r.overall_bias.includes('숏 추천') ? '숏' : r.overall_bias.split(' ')[0]}</span>
                     </div>
                 </div>`;
             }).join('');

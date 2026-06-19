@@ -54,6 +54,24 @@ def _public_result(row: dict) -> dict:
     return {k: v for k, v in row.items() if k not in ("chart_candles", "candles")}
 
 
+def _is_strong_long(row: dict) -> bool:
+    return "롱 추천" in row.get("overall_bias", "")
+
+
+def _is_strong_short(row: dict) -> bool:
+    return "숏 추천" in row.get("overall_bias", "")
+
+
+def _summary_item(row: dict, *, score_key: str) -> dict:
+    return {
+        "kr": row["kr"],
+        "symbol": row["symbol"],
+        "score": row.get(score_key, 0),
+        "bias": row.get("overall_bias", ""),
+        "reco": row.get("bull_recommendation" if score_key == "bull_score" else "bear_recommendation", ""),
+    }
+
+
 def _serialize_results(data: dict) -> dict:
     if not data:
         return {"generated_at": None, "results": [], "meta": {}}
@@ -61,6 +79,16 @@ def _serialize_results(data: dict) -> dict:
     bull_summary = sorted(
         [r for r in results if r.get("bull_score", 0) >= 50],
         key=lambda x: x.get("bull_score", 0),
+        reverse=True,
+    )
+    strong_long = sorted(
+        [r for r in results if _is_strong_long(r)],
+        key=lambda x: x.get("bull_score", 0),
+        reverse=True,
+    )
+    strong_short = sorted(
+        [r for r in results if _is_strong_short(r)],
+        key=lambda x: x.get("bear_score", 0),
         reverse=True,
     )
     return {
@@ -75,6 +103,8 @@ def _serialize_results(data: dict) -> dict:
             {"kr": r["kr"], "symbol": r["symbol"], "score": r["bull_score"], "reco": r.get("bull_recommendation", "")}
             for r in bull_summary
         ],
+        "strong_long_summary": [_summary_item(r, score_key="bull_score") for r in strong_long],
+        "strong_short_summary": [_summary_item(r, score_key="bear_score") for r in strong_short],
         "coin_count": len(results),
         "has_mpl": HAS_MPL,
     }
