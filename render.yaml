@@ -19,5 +19,3 @@ services:
         value: Agg
       - key: BINANCE_API_BASE
         value: "https://data-api.binance.vision"
-      - key: DISABLE_SCAN
-        value: "0"
