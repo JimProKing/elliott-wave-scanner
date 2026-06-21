@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -45,6 +45,11 @@ from 엘리어트_지정종목_분석 import (  # noqa: E402
 RESULTS_DIR = (_RESULTS_BASE if _RESULTS_BASE.exists() else _MODULE_DIR) / "지정종목_엘리어트분석"
 
 
+def utc_now_iso() -> str:
+    """저장·비교용 UTC 시각 (ISO 8601, Z 접미사)."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 def _normalize_payload(data: Dict) -> Dict:
     if not data:
         return data
@@ -81,7 +86,7 @@ def run_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT
     saved_path = None
 
     payload = {
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": utc_now_iso(),
         "interval": interval,
         "lookback": lookback,
         "top_n": top_n,

@@ -450,6 +450,31 @@
         const allowScan = true;
         const isProduction = {{ 'true' if is_production else 'false' }};
 
+        const KST_TZ = 'Asia/Seoul';
+
+        function parseGeneratedAt(iso) {
+            if (!iso) return null;
+            const s = String(iso).trim();
+            const hasTz = /[Zz]$|[+-]\d{2}:\d{2}$/.test(s);
+            const d = new Date(hasTz ? s : `${s}Z`);
+            return Number.isNaN(d.getTime()) ? null : d;
+        }
+
+        function fmtKst(iso, options = {}) {
+            const d = parseGeneratedAt(iso);
+            if (!d) return '';
+            return d.toLocaleString('ko-KR', {
+                timeZone: KST_TZ,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+                ...options,
+            });
+        }
+
         function formatScanError(msg) {
             if (!msg) return msg;
             if (msg.includes('451') || msg.includes('차단')) {
@@ -551,7 +576,7 @@
             const updated = document.getElementById('last-updated');
             if (data?.generated_at) {
                 lastKnownGeneratedAt = data.generated_at;
-                const when = new Date(data.generated_at).toLocaleString('ko-KR');
+                const when = fmtKst(data.generated_at, { second: '2-digit' });
                 const count = data.coin_count != null ? ` · ${data.coin_count}종목` : '';
                 updated.textContent = `${prefix}: ${when}${count}`;
             } else {
@@ -817,7 +842,7 @@
                             document.getElementById('status-line').textContent = '오류: ' + formatScanError(st.last_error);
                         } else {
                             document.getElementById('status-line').textContent =
-                                `완료! ${st.coin_count || 0}종목 · ${st.generated_at ? new Date(st.generated_at).toLocaleString('ko-KR') : ''}`;
+                                `완료! ${st.coin_count || 0}종목 · ${st.generated_at ? fmtKst(st.generated_at, { second: '2-digit' }) : ''}`;
                             document.getElementById('report-select').value = '';
                         }
                         await loadResults({ fresh: true });
@@ -854,7 +879,7 @@
                     const opt = document.createElement('option');
                     opt.value = r.filename;
                     const when = r.generated_at
-                        ? new Date(r.generated_at).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+                        ? fmtKst(r.generated_at, { year: undefined })
                         : r.filename;
                     const tag = r.label ? `${r.label} ` : '';
                     opt.textContent = `${tag}${when}`;
