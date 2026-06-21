@@ -660,7 +660,9 @@
             }
             box.classList.remove('hidden');
             list.innerHTML = summary.map(s =>
-                `<div class="flex justify-between gap-2"><span class="truncate">${s.kr} (${s.symbol})</span><span class="text-emerald-400 font-semibold shrink-0">${s.score}점</span></div>`
+                `<div class="flex justify-between gap-2 cursor-pointer hover:text-emerald-200" onclick="selectCoin('${s.symbol}')">` +
+                `<span class="truncate">${s.kr} (${s.symbol})</span>` +
+                `<span class="text-emerald-400 font-semibold shrink-0">${s.score}점</span></div>`
             ).join('');
         }
 
