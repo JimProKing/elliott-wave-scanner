@@ -67,10 +67,14 @@
                 min-height: 0;
                 overflow-y: auto;
             }
-            #strong-signals,
-            #bull-summary {
+            #strong-signals {
                 flex-shrink: 0;
                 max-height: 7.5rem;
+                overflow-y: auto;
+            }
+            #bull-summary {
+                flex-shrink: 0;
+                max-height: 5.25rem;
                 overflow-y: auto;
             }
             .coin-card {
@@ -92,9 +96,11 @@
             }
         }
         @media (min-width: 1024px) {
-            #strong-signals,
-            #bull-summary {
+            #strong-signals {
                 max-height: 9rem;
+            }
+            #bull-summary {
+                max-height: 6.3rem;
             }
         }
         @media (max-width: 767px) {
@@ -209,9 +215,9 @@
             </div>
 
             <!-- 상승 신호 참고 (50점+) -->
-            <div id="bull-summary" class="px-4 py-3 border-b border-slate-800 hidden">
-                <div class="text-xs font-semibold text-emerald-400 mb-2"><i class="fa-solid fa-chart-line"></i> 상승 신호 참고 (50점+)</div>
-                <div id="bull-summary-list" class="space-y-1 text-xs"></div>
+            <div id="bull-summary" class="px-3 py-2 md:py-1.5 border-b border-slate-800 hidden">
+                <div class="text-[10px] md:text-[11px] font-semibold text-emerald-400 mb-1 leading-tight"><i class="fa-solid fa-chart-line"></i> 상승 신호 참고 (50점+)</div>
+                <div id="bull-summary-list" class="space-y-0.5 text-[10px] md:text-[11px] leading-tight"></div>
             </div>
 
             <!-- 종목 카드 리스트 -->
@@ -609,7 +615,7 @@
             }
             box.classList.remove('hidden');
             list.innerHTML = summary.map(s =>
-                `<div class="flex justify-between"><span>${s.kr} (${s.symbol})</span><span class="text-emerald-400 font-bold">${s.score}점</span></div>`
+                `<div class="flex justify-between gap-2"><span class="truncate">${s.kr} (${s.symbol})</span><span class="text-emerald-400 font-semibold shrink-0">${s.score}점</span></div>`
             ).join('');
         }
 
