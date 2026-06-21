@@ -365,8 +365,10 @@
         let allResults = [];
         let selectedSymbol = null;
         let isScanning = false;
+        let lastKnownGeneratedAt = null;
         const hasMpl = {{ 'true' if has_mpl else 'false' }};
         const allowScan = true;
+        const isProduction = {{ 'true' if is_production else 'false' }};
 
         function formatScanError(msg) {
             if (!msg) return msg;
@@ -468,6 +470,7 @@
         function updateLastUpdated(data, prefix = '마지막') {
             const updated = document.getElementById('last-updated');
             if (data?.generated_at) {
+                lastKnownGeneratedAt = data.generated_at;
                 const when = new Date(data.generated_at).toLocaleString('ko-KR');
                 const count = data.coin_count != null ? ` · ${data.coin_count}종목` : '';
                 updated.textContent = `${prefix}: ${when}${count}`;
@@ -476,26 +479,31 @@
             }
         }
 
-        async function loadResults() {
+        function applyResultsData(data) {
+            allResults = data.results || [];
+            updateLastUpdated(data);
+            if (data.pool) {
+                document.getElementById('pool-desc').textContent = data.pool;
+            }
+
+            renderStrongSignals(data.strong_long_summary || [], data.strong_short_summary || []);
+            renderBullSummary(data.bull_summary || []);
+            renderCoinList();
+
+            if (selectedSymbol) {
+                const coin = allResults.find(r => r.symbol === selectedSymbol);
+                if (coin) showDetail(coin, { fromReload: true });
+            } else if (allResults.length > 0 && !isMobileView()) {
+                showDetail(allResults[0]);
+            }
+        }
+
+        async function loadResults({ fresh = false } = {}) {
             try {
-                const res = await fetch('/api/latest?t=' + Date.now());
-                const data = await res.json();
-                allResults = data.results || [];
-                updateLastUpdated(data);
-                if (data.pool) {
-                    document.getElementById('pool-desc').textContent = data.pool;
-                }
-
-                renderStrongSignals(data.strong_long_summary || [], data.strong_short_summary || []);
-                renderBullSummary(data.bull_summary || []);
-                renderCoinList();
-
-                if (selectedSymbol) {
-                    const coin = allResults.find(r => r.symbol === selectedSymbol);
-                    if (coin) showDetail(coin, { fromReload: true });
-                } else if (allResults.length > 0 && !isMobileView()) {
-                    showDetail(allResults[0]);
-                }
+                const freshParam = fresh ? '&fresh=1' : '';
+                const res = await fetch('/api/latest?t=' + Date.now() + freshParam);
+                const data = await parseJsonResponse(res);
+                applyResultsData(data);
             } catch (e) {
                 console.error(e);
             }
@@ -665,11 +673,20 @@
             const status = document.getElementById('status-line');
             btn.disabled = true;
             label.textContent = '갱신 중...';
-            status.textContent = '최신 데이터를 불러오는 중...';
+            status.textContent = isProduction
+                ? 'GitHub·서버에서 최신 데이터를 불러오는 중...'
+                : '최신 데이터를 불러오는 중...';
             try {
-                await fetch('/api/reload', { method: 'POST' });
-                await loadResults();
-                status.textContent = '새로고침 완료';
+                const res = await fetch('/api/reload?t=' + Date.now(), { method: 'POST' });
+                const data = await parseJsonResponse(res);
+                if (!res.ok || data.success === false) {
+                    throw new Error(data.message || `HTTP ${res.status}`);
+                }
+                applyResultsData(data);
+                await loadReports();
+                status.textContent = data.coin_count
+                    ? `새로고침 완료 · ${data.coin_count}종목`
+                    : '새로고침 완료';
                 setTimeout(() => { status.textContent = ''; }, 2500);
             } catch (e) {
                 status.textContent = '새로고침 실패: ' + e.message;
@@ -694,6 +711,7 @@
                 if (!scanRes.ok || scanData.success === false) {
                     throw new Error(scanData.message || `HTTP ${scanRes.status}`);
                 }
+                const scanStartedAt = lastKnownGeneratedAt;
                 let sawScanning = false;
                 let waitedMs = 0;
                 const poll = setInterval(async () => {
@@ -701,7 +719,11 @@
                     const st = await (await fetch('/api/status?t=' + Date.now())).json();
                     if (st.scanning) sawScanning = true;
 
-                    if (sawScanning && !st.scanning) {
+                    const hasNewData = st.generated_at && st.generated_at !== scanStartedAt;
+                    const scanFinished = sawScanning && !st.scanning;
+                    const quickFinish = !st.scanning && hasNewData;
+
+                    if (scanFinished || quickFinish) {
                         clearInterval(poll);
                         isScanning = false;
                         document.getElementById('scan-text').textContent = '지금 분석 실행';
@@ -713,15 +735,14 @@
                             document.getElementById('status-line').textContent =
                                 `완료! ${st.coin_count || 0}종목 · ${st.generated_at ? new Date(st.generated_at).toLocaleString('ko-KR') : ''}`;
                             document.getElementById('report-select').value = '';
-                            updateLastUpdated(st, '방금 분석');
                         }
-                        await loadResults();
+                        await loadResults({ fresh: true });
                         await loadReports();
                         setTimeout(() => { document.getElementById('status-line').textContent = ''; }, 5000);
                         return;
                     }
 
-                    if (!sawScanning && waitedMs >= 180000) {
+                    if (!sawScanning && !hasNewData && waitedMs >= 180000) {
                         clearInterval(poll);
                         isScanning = false;
                         document.getElementById('scan-text').textContent = '지금 분석 실행';
@@ -779,11 +800,27 @@
             document.getElementById('report-select').value = filename;
         }
 
-        loadResults();
+        loadResults({ fresh: isProduction });
         loadReports();
+        let autoRefreshTick = 0;
         setInterval(async () => {
-            const st = await (await fetch('/api/status')).json();
-            if (!st.scanning && !isScanning) loadResults();
+            if (isScanning) return;
+            autoRefreshTick += 1;
+            try {
+                if (isProduction) {
+                    await loadResults({ fresh: true });
+                    if (autoRefreshTick % 2 === 0) await loadReports();
+                    return;
+                }
+                const st = await (await fetch('/api/status?t=' + Date.now())).json();
+                if (st.scanning) return;
+                if (st.generated_at && st.generated_at !== lastKnownGeneratedAt) {
+                    await loadResults({ fresh: true });
+                    await loadReports();
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }, 30000);
     </script>
 </body>

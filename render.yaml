@@ -19,3 +19,5 @@ services:
         value: Agg
       - key: BINANCE_API_BASE
         value: "https://data-api.binance.vision"
+      - key: GITHUB_RAW_DATA_URL
+        value: "https://raw.githubusercontent.com/JimProKing/elliott-wave-scanner/main/focused_viewer/data/latest.json"

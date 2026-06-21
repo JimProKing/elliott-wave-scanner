@@ -104,11 +104,18 @@ def run_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT
     }
 
 
+def get_data_file_mtime() -> Optional[float]:
+    if not _DATA_FILE.exists():
+        return None
+    return _DATA_FILE.stat().st_mtime
+
+
 def load_latest_saved() -> Optional[Dict]:
     if _DATA_FILE.exists():
         with open(_DATA_FILE, "r", encoding="utf-8") as f:
             data = _normalize_payload(json.load(f))
             data["source_file"] = "data/latest.json"
+            data["_file_mtime"] = _DATA_FILE.stat().st_mtime
             return data
 
     if not RESULTS_DIR.exists():
@@ -119,7 +126,27 @@ def load_latest_saved() -> Optional[Dict]:
     with open(json_files[0], "r", encoding="utf-8") as f:
         data = _normalize_payload(json.load(f))
         data["source_file"] = json_files[0].name
+        data["_file_mtime"] = json_files[0].stat().st_mtime
         return data
+
+
+def load_latest_from_url(url: str, *, timeout: float = 20.0) -> Optional[Dict]:
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "elliott-focused-viewer/1.0", "Cache-Control": "no-cache"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = _normalize_payload(json.loads(resp.read().decode("utf-8")))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError):
+        return None
+    if not data.get("results"):
+        return None
+    data["source_file"] = "remote/latest.json"
+    return data
 
 
 def _read_generated_at(path: Path) -> Optional[str]:

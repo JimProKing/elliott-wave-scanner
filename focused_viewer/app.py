@@ -29,11 +29,14 @@ if str(APP_DIR) not in sys.path:
 
 from analyzer_bridge import (  # noqa: E402
     DEFAULT_TOP_N,
+    get_data_file_mtime,
     list_saved_reports,
+    load_latest_from_url,
     load_latest_saved,
     load_report,
     resolve_chart_candles,
     run_analysis,
+    save_to_data_file,
 )
 from charts import HAS_MPL, chart_to_base64, generate_chart_bytes  # noqa: E402
 
@@ -44,10 +47,77 @@ app = Flask(
 )
 app.config["JSON_AS_ASCII"] = False
 
-_cache: dict = {"data": None, "scanning": False, "last_error": None}
+_cache: dict = {"data": None, "scanning": False, "last_error": None, "data_mtime": None}
 PORT = int(os.environ.get("PORT", 5789))
 IS_PRODUCTION = os.environ.get("RENDER") or os.environ.get("WEB_DEPLOY") or os.environ.get("RAILWAY_ENVIRONMENT")
 SCAN_SECRET = os.environ.get("SCAN_SECRET", "")
+REMOTE_DATA_URL = os.environ.get(
+    "GITHUB_RAW_DATA_URL",
+    "https://raw.githubusercontent.com/JimProKing/elliott-wave-scanner/main/focused_viewer/data/latest.json",
+).strip()
+
+
+def _cache_generated_at() -> Optional[str]:
+    data = _cache.get("data")
+    return data.get("generated_at") if data else None
+
+
+def _pick_newer_data(*candidates: Optional[dict]) -> Optional[dict]:
+    best: Optional[dict] = None
+    best_at = ""
+    for item in candidates:
+        if not item or not item.get("results"):
+            continue
+        generated_at = item.get("generated_at") or ""
+        if generated_at > best_at:
+            best = item
+            best_at = generated_at
+    return best
+
+
+def _set_cache_data(data: Optional[dict]) -> Optional[dict]:
+    if not data:
+        _cache["data"] = None
+        _cache["data_mtime"] = None
+        return None
+    clean = {k: v for k, v in data.items() if not str(k).startswith("_")}
+    _cache["data"] = clean
+    _cache["data_mtime"] = data.get("_file_mtime") or get_data_file_mtime()
+    return clean
+
+
+def _refresh_cache(*, force: bool = False, allow_remote: bool = False) -> Optional[dict]:
+    disk = load_latest_saved()
+    remote = None
+    if allow_remote and REMOTE_DATA_URL:
+        remote = load_latest_from_url(f"{REMOTE_DATA_URL}?t={int(time.time())}")
+
+    newest = _pick_newer_data(disk, remote)
+    if not newest:
+        if force:
+            _set_cache_data(None)
+        return _cache.get("data")
+
+    disk_mtime = newest.get("_file_mtime") or get_data_file_mtime()
+    cached_at = _cache_generated_at() or ""
+    newest_at = newest.get("generated_at") or ""
+    cache_mtime = _cache.get("data_mtime")
+
+    should_update = force
+    if not should_update and _cache.get("data") is None:
+        should_update = True
+    if not should_update and newest_at and newest_at > cached_at:
+        should_update = True
+    if not should_update and disk_mtime and cache_mtime and disk_mtime > cache_mtime:
+        should_update = True
+
+    if should_update:
+        if remote and newest is remote and (not disk or remote.get("generated_at", "") > (disk.get("generated_at") or "")):
+            save_to_data_file({k: v for k, v in remote.items() if not str(k).startswith("_")})
+            newest["_file_mtime"] = get_data_file_mtime()
+        _set_cache_data(newest)
+
+    return _cache.get("data")
 
 
 def _public_result(row: dict) -> dict:
@@ -125,12 +195,7 @@ def index():
 
 @app.route("/api/status")
 def api_status():
-    data = _cache.get("data")
-    if data is None:
-        saved = load_latest_saved()
-        if saved:
-            _cache["data"] = saved
-            data = saved
+    data = _refresh_cache(force=False, allow_remote=False)
     return jsonify({
         "scanning": _cache["scanning"],
         "last_error": _cache.get("last_error"),
@@ -143,25 +208,24 @@ def api_status():
 
 @app.route("/api/latest")
 def api_latest():
-    data = _cache.get("data")
-    if data is None:
-        data = load_latest_saved()
-        if data:
-            _cache["data"] = data
+    fresh = request.args.get("fresh", "").lower() in ("1", "true", "yes")
+    data = _refresh_cache(
+        force=fresh,
+        allow_remote=fresh and bool(IS_PRODUCTION),
+    )
     return jsonify(_serialize_results(data or {}))
 
 
 @app.route("/api/reload", methods=["POST"])
 def api_reload():
-    """디스크의 latest.json을 다시 읽어 캐시 갱신."""
-    _cache["data"] = None
-    saved = load_latest_saved()
-    if saved:
-        _cache["data"] = saved
+    """디스크/원격 latest.json을 다시 읽어 캐시 갱신."""
+    data = _refresh_cache(force=True, allow_remote=bool(IS_PRODUCTION))
+    payload = _serialize_results(data or {})
     return jsonify({
-        "success": bool(saved),
-        "generated_at": saved.get("generated_at") if saved else None,
-        "coin_count": len(saved.get("results", [])) if saved else 0,
+        "success": bool(data),
+        "generated_at": payload.get("generated_at"),
+        "coin_count": payload.get("coin_count", 0),
+        **payload,
     })
 
 
@@ -187,7 +251,8 @@ def api_scan():
                 os.environ["WEB_DEPLOY"] = "1"
             result = run_analysis(interval=interval, lookback=lookback, save=not IS_PRODUCTION)
             result["source_file"] = result.get("history_file") or "data/latest.json"
-            _cache["data"] = result
+            result["_file_mtime"] = get_data_file_mtime()
+            _set_cache_data(result)
         except Exception as e:
             _cache["last_error"] = str(e)
         finally:
@@ -208,7 +273,7 @@ def api_report(filename: str):
     data = load_report(filename, prefer_cache=cached if filename in ("data/latest.json", "latest.json") else None)
     if not data:
         return jsonify({"error": "파일 없음"}), 404
-    _cache["data"] = data
+    _set_cache_data(data)
     return jsonify(_serialize_results(data))
 
 
@@ -312,9 +377,8 @@ def start_flask():
 
 
 def main(use_webview: bool = True):
-    saved = load_latest_saved()
+    saved = _refresh_cache(force=True, allow_remote=bool(IS_PRODUCTION))
     if saved:
-        _cache["data"] = saved
         print(f"[로드] 최근 저장 결과: {saved.get('source_file', 'unknown')}")
 
     server_thread = threading.Thread(target=start_flask, daemon=True)
@@ -353,9 +417,7 @@ def main(use_webview: bool = True):
 
 if __name__ == "__main__":
     if IS_PRODUCTION or "--server" in sys.argv:
-        saved = load_latest_saved()
-        if saved:
-            _cache["data"] = saved
+        _refresh_cache(force=True, allow_remote=bool(IS_PRODUCTION))
         start_flask()
     else:
         no_webview = "--browser" in sys.argv
