@@ -72,7 +72,16 @@
                 max-height: 7.5rem;
                 overflow-y: auto;
             }
-            #bull-summary-list-wrap {
+            #bull-summary-section {
+                display: flex;
+                flex-direction: column;
+            }
+            #bull-summary-title {
+                order: 0;
+                flex-shrink: 0;
+            }
+            #bull-summary-list {
+                order: 1;
                 flex-shrink: 0;
                 max-height: 5.25rem;
                 overflow-y: auto;
@@ -106,7 +115,7 @@
             #strong-signals {
                 max-height: 9rem;
             }
-            #bull-summary-list-wrap {
+            #bull-summary-list {
                 max-height: 6.3rem;
             }
         }
@@ -221,14 +230,12 @@
                 </div>
             </div>
 
-            <!-- 상승 신호 참고 (50점+) -->
-            <div id="bull-summary-section" class="border-b border-slate-800 hidden shrink-0">
-                <div id="bull-summary-heading" class="px-3 pt-2 pb-1 md:pt-1.5 md:pb-0.5 text-[10px] md:text-[11px] font-semibold text-emerald-400 leading-tight shrink-0">
+            <!-- 상승 신호 참고 (50점+) — 제목은 항상 목록 위 (강한 롱 추천과 동일 구조) -->
+            <div id="bull-summary-section" class="px-4 py-3 border-b border-slate-800 hidden shrink-0 flex flex-col">
+                <div id="bull-summary-title" class="text-[10px] md:text-[11px] font-semibold text-emerald-400 mb-1.5 leading-tight shrink-0">
                     <i class="fa-solid fa-chart-line"></i> 상승 신호 참고 (50점+)
                 </div>
-                <div id="bull-summary-list-wrap" class="px-3 pb-2 md:pb-1.5 scroll-area scrollbar-thin">
-                    <div id="bull-summary-list" class="space-y-0.5 text-[10px] md:text-[11px] leading-tight"></div>
-                </div>
+                <div id="bull-summary-list" class="space-y-0.5 text-[10px] md:text-[11px] leading-tight scroll-area scrollbar-thin"></div>
             </div>
 
             <!-- 종목 카드 리스트 -->
