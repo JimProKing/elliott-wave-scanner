@@ -221,18 +221,18 @@
                 </div>
             </div>
 
-            <!-- 상승 신호 참고 (50점+) 항목 -->
+            <!-- 상승 신호 참고 (50점+) -->
             <div id="bull-summary-section" class="border-b border-slate-800 hidden shrink-0">
-                <div id="bull-summary-list-wrap" class="px-3 py-2 md:py-1.5 scroll-area scrollbar-thin">
+                <div id="bull-summary-heading" class="px-3 pt-2 pb-1 md:pt-1.5 md:pb-0.5 text-[10px] md:text-[11px] font-semibold text-emerald-400 leading-tight shrink-0">
+                    <i class="fa-solid fa-chart-line"></i> 상승 신호 참고 (50점+)
+                </div>
+                <div id="bull-summary-list-wrap" class="px-3 pb-2 md:pb-1.5 scroll-area scrollbar-thin">
                     <div id="bull-summary-list" class="space-y-0.5 text-[10px] md:text-[11px] leading-tight"></div>
                 </div>
             </div>
 
             <!-- 종목 카드 리스트 -->
             <div id="list-section-header" class="shrink-0 border-b border-slate-800 bg-slate-900/95">
-                <div id="bull-summary-heading" class="hidden px-3 py-1.5 md:py-1 text-[10px] md:text-[11px] font-semibold text-emerald-400 leading-tight border-b border-slate-800/80">
-                    <i class="fa-solid fa-chart-line"></i> 상승 신호 참고 (50점+)
-                </div>
                 <div class="px-3 md:px-4 py-2 pb-1.5 flex items-center justify-between">
                     <span class="text-sm font-semibold text-slate-300">종목 목록</span>
                     <span id="coin-list-count" class="text-xs text-slate-500"></span>
@@ -621,15 +621,12 @@
 
         function renderBullSummary(summary) {
             const box = document.getElementById('bull-summary-section');
-            const heading = document.getElementById('bull-summary-heading');
             const list = document.getElementById('bull-summary-list');
             if (!summary.length) {
                 box.classList.add('hidden');
-                if (heading) heading.classList.add('hidden');
                 return;
             }
             box.classList.remove('hidden');
-            if (heading) heading.classList.remove('hidden');
             list.innerHTML = summary.map(s =>
                 `<div class="flex justify-between gap-2"><span class="truncate">${s.kr} (${s.symbol})</span><span class="text-emerald-400 font-semibold shrink-0">${s.score}점</span></div>`
             ).join('');
