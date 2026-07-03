@@ -31,6 +31,27 @@
 
         .chart-viewport { min-height: 360px; }
         .chart-viewport img { width: 100%; height: auto; display: block; }
+
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 0.75rem;
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid #334155;
+            border-radius: 0.625rem;
+        }
+        .legend-line {
+            flex-shrink: 0;
+            width: 1.75rem;
+            height: 0;
+            border-top-width: 3px;
+            border-top-style: solid;
+            border-top-color: var(--legend-color, #94a3b8);
+        }
+        .legend-line.dash { border-top-style: dashed; }
+        .legend-line.dash-dot { border-top-style: dashed; border-top-width: 2px; }
+        .legend-line.dotted { border-top-style: dotted; }
         @media (max-width: 767px) {
             .chart-viewport {
                 width: 100%;
@@ -335,6 +356,10 @@
                     <div id="chart-container" class="chart-viewport w-full flex items-center justify-center">
                         <div class="text-slate-500 text-sm">차트 로딩 중...</div>
                     </div>
+                    <div id="chart-legend" class="hidden mt-3 pt-3 border-t border-slate-700/80">
+                        <div class="text-sm md:text-base font-semibold text-slate-300 mb-2.5">차트 레벨</div>
+                        <div id="chart-legend-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 md:gap-3"></div>
+                    </div>
                 </div>
 
                 <!-- 이유 + 레벨 -->
@@ -557,6 +582,39 @@
             return p.toFixed(6);
         }
 
+        const CHART_LEGEND_ITEMS = [
+            { id: 'close', label: '종가', color: '#7dd3fc', lineClass: '', price: r => r.current_price },
+            { id: 'long_entry', label: '롱 진입', color: '#4ade80', lineClass: 'dash', price: r => r.long_levels?.entry },
+            { id: 'long_sl', label: '롱 손절', color: '#f43f5e', lineClass: 'dash-dot', price: r => r.long_levels?.sl },
+            { id: 'short_entry', label: '숏 진입', color: '#facc15', lineClass: 'dash', price: r => r.short_levels?.entry },
+            { id: 'short_sl', label: '숏 손절', color: '#a78bfa', lineClass: 'dotted', price: r => r.short_levels?.sl },
+        ];
+
+        function renderChartLegend(r) {
+            const panel = document.getElementById('chart-legend');
+            const grid = document.getElementById('chart-legend-grid');
+            const items = CHART_LEGEND_ITEMS
+                .map(item => ({ ...item, value: item.price(r) }))
+                .filter(item => item.value && item.value > 0);
+
+            if (!items.length) {
+                panel.classList.add('hidden');
+                grid.innerHTML = '';
+                return;
+            }
+
+            grid.innerHTML = items.map(item => `
+                <div class="chart-legend-item">
+                    <div class="legend-line ${item.lineClass}" style="--legend-color: ${item.color}"></div>
+                    <div class="min-w-0">
+                        <div class="text-sm md:text-base text-slate-400 leading-tight">${item.label}</div>
+                        <div class="font-mono font-bold text-base md:text-lg leading-snug mt-0.5" style="color: ${item.color}">${fmtPrice(item.value)}</div>
+                    </div>
+                </div>
+            `).join('');
+            panel.classList.remove('hidden');
+        }
+
         function scoreColor(score, isBull) {
             if (score >= 80) return isBull ? 'text-emerald-300' : 'text-red-300';
             if (score >= 70) return isBull ? 'text-emerald-400' : 'text-red-400';
@@ -745,6 +803,7 @@
                 `Entry ${fmtPrice(sl.entry)} · SL <span class="text-red-400">${fmtPrice(sl.sl)}</span><br>` +
                 `TP1 ${fmtPrice(sl.tp1)} · TP2 ${fmtPrice(sl.tp2)} · TP3 ${fmtPrice(sl.tp3)}`;
 
+            renderChartLegend(r);
             loadChart(r.symbol);
         }
 

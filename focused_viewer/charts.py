@@ -11,6 +11,20 @@ CHART_DISPLAY_DAYS = 3
 CHART_MIN_CANDLES = 8
 CHART_DPI = 150
 
+# Dark background — each line uses a distinct hue + dash pattern.
+CHART_COLORS = {
+    "close": "#7dd3fc",
+    "long_entry": "#4ade80",
+    "long_sl": "#f43f5e",
+    "short_entry": "#facc15",
+    "short_sl": "#a78bfa",
+}
+CHART_LEVEL_STYLES = {
+    "long_entry": ((6, 3), 1.6),
+    "long_sl": ((4, 2, 1, 2), 1.6),
+    "short_entry": ((8, 3), 1.6),
+    "short_sl": ((2, 2), 1.6),
+}
 
 def _figure_layout(
     *,
@@ -29,7 +43,6 @@ def _figure_layout(
             "title_fs": max(11, 12 * scale),
             "ylabel_fs": max(10, 11 * scale),
             "tick_fs": max(9, 10 * scale),
-            "legend_fs": max(8, 9 * scale),
             "foot_fs": max(8, 9 * scale),
             "line_w": max(2.0, 2.3 * scale),
         }
@@ -39,14 +52,14 @@ def _figure_layout(
         fig_w, fig_h = 10.0, 9.0
         metrics = {
             "title_fs": 13, "ylabel_fs": 11, "tick_fs": 10,
-            "legend_fs": 9, "foot_fs": 9, "line_w": 2.4,
+            "foot_fs": 9, "line_w": 2.4,
         }
         return fig_w, fig_h, dpi, metrics
 
     fig_w, fig_h = 14.0, 7.5
     metrics = {
         "title_fs": 14, "ylabel_fs": 12, "tick_fs": 11,
-        "legend_fs": 10, "foot_fs": 10, "line_w": 2.6,
+        "foot_fs": 10, "line_w": 2.6,
     }
     return fig_w, fig_h, dpi, metrics
 
@@ -117,7 +130,6 @@ def generate_chart_bytes(
     title_fs = m["title_fs"]
     ylabel_fs = m["ylabel_fs"]
     tick_fs = m["tick_fs"]
-    legend_fs = m["legend_fs"]
     foot_fs = m["foot_fs"]
     line_w = m["line_w"]
 
@@ -129,21 +141,43 @@ def generate_chart_bytes(
     ax.grid(True, alpha=0.2, color="#475569", linestyle="-", linewidth=0.6)
 
     ax.fill_between(times, lows, highs, color="#334155", alpha=0.35, linewidth=0)
-    ax.plot(times, closes, color="#38bdf8", linewidth=line_w, label="Close", zorder=3)
+    ax.plot(
+        times, closes,
+        color=CHART_COLORS["close"],
+        linewidth=line_w,
+        label="Close",
+        zorder=3,
+    )
 
     long_lv = coin_info.get("long_levels", {})
     short_lv = coin_info.get("short_levels", {})
     price_min, price_max = min(lows), max(highs)
     margin = (price_max - price_min) * 0.08 or price_max * 0.01
+    level_prices: list[float] = []
 
-    for price, color, label in (
-        (long_lv.get("entry"), "#22c55e", "Long entry"),
-        (long_lv.get("sl"), "#ef4444", "Long SL"),
-        (short_lv.get("entry"), "#f97316", "Short entry"),
-        (short_lv.get("sl"), "#fb7185", "Short SL"),
+    for price, key, label in (
+        (long_lv.get("entry"), "long_entry", "Long entry"),
+        (long_lv.get("sl"), "long_sl", "Long SL"),
+        (short_lv.get("entry"), "short_entry", "Short entry"),
+        (short_lv.get("sl"), "short_sl", "Short SL"),
     ):
-        if price and price > 0 and price_min - margin <= price <= price_max + margin:
-            ax.axhline(price, color=color, linestyle="--", linewidth=1.4, alpha=0.9, label=label)
+        if price and price > 0:
+            level_prices.append(price)
+            dash, lw = CHART_LEVEL_STYLES[key]
+            ax.axhline(
+                price,
+                color=CHART_COLORS[key],
+                linestyle=(0, dash),
+                linewidth=lw,
+                alpha=0.95,
+                label=label,
+                zorder=4,
+            )
+
+    if level_prices:
+        y_lo = min(price_min, min(level_prices)) - margin
+        y_hi = max(price_max, max(level_prices)) + margin
+        ax.set_ylim(y_lo, y_hi)
 
     title = f"{sym}  |  Bull {bull_s}  /  Bear {bear_s}  |  {bias_en}"
     ax.set_title(title, fontsize=title_fs, color="#f8fafc", pad=12, fontweight="bold")
@@ -155,7 +189,6 @@ def generate_chart_bytes(
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha="center", color="#cbd5e1")
 
-    ax.legend(loc="upper left", fontsize=legend_fs, framealpha=0.35, facecolor="#0f172a", labelcolor="#e2e8f0")
     fig.text(
         0.99, 0.02,
         f"Last {display_days} days · {interval}",

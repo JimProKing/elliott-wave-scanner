@@ -569,23 +569,55 @@ def get_higher_tf_bias(daily_candles: List[Dict]) -> str:
 def compute_levels(current: float, swing_low: Optional[float], swing_high: Optional[float], direction: str) -> Dict:
     """
     방향에 따른 실전 레벨 계산 (Elliott + Fib)
-    - Long: SL = 최근 의미 저점 약간 아래, TP = 1.618R / 2.0R / 2.618R
-    - Short: 대칭
+    - Long: Entry = 최근 스윙 저점(지지), SL = 저점 아래, TP = R배수
+    - Short: Entry = 최근 스윙 고점(저항), SL = 고점 위, TP = R배수
     """
     if direction == "long":
-        sl = round(swing_low * 0.982, 8) if swing_low else round(current * 0.94, 8)
-        if sl >= current:
-            sl = round(current * 0.93, 8)
-        risk = current - sl
-        tps = [round(current + risk * r, 8) for r in (1.618, 2.0, 2.618)]
-        return {"entry": round(current, 8), "sl": sl, "tp1": tps[0], "tp2": tps[1], "tp3": tps[2], "risk_reward": "1 : 1.62~2.62"}
+        if swing_low and swing_low < current:
+            entry = round(swing_low, 8)
+        elif swing_low and swing_high and swing_high > swing_low:
+            entry = round(swing_high - (swing_high - swing_low) * 0.618, 8)
+            if entry >= current:
+                entry = round(current * 0.985, 8)
+        else:
+            entry = round(current * 0.985, 8)
+
+        if swing_low and swing_low <= entry:
+            sl = round(swing_low * 0.982, 8)
+        else:
+            sl = round(entry * 0.97, 8)
+        if sl >= entry:
+            sl = round(entry * 0.97, 8)
+
+        risk = entry - sl
+        if risk <= 0:
+            risk = entry * 0.03
+            sl = round(entry - risk, 8)
+        tps = [round(entry + risk * r, 8) for r in (1.618, 2.0, 2.618)]
+        return {"entry": entry, "sl": sl, "tp1": tps[0], "tp2": tps[1], "tp3": tps[2], "risk_reward": "1 : 1.62~2.62"}
+
+    if swing_high and swing_high > current:
+        entry = round(swing_high, 8)
+    elif swing_low and swing_high and swing_high > swing_low:
+        entry = round(swing_low + (swing_high - swing_low) * 0.618, 8)
+        if entry <= current:
+            entry = round(current * 1.015, 8)
     else:
-        sl = round(swing_high * 1.018, 8) if swing_high else round(current * 1.06, 8)
-        if sl <= current:
-            sl = round(current * 1.07, 8)
-        risk = sl - current
-        tps = [round(current - risk * r, 8) for r in (1.618, 2.0, 2.618)]
-        return {"entry": round(current, 8), "sl": sl, "tp1": tps[0], "tp2": tps[1], "tp3": tps[2], "risk_reward": "1 : 1.62~2.62"}
+        entry = round(current * 1.015, 8)
+
+    if swing_high and swing_high >= entry:
+        sl = round(swing_high * 1.018, 8)
+    else:
+        sl = round(entry * 1.03, 8)
+    if sl <= entry:
+        sl = round(entry * 1.03, 8)
+
+    risk = sl - entry
+    if risk <= 0:
+        risk = entry * 0.03
+        sl = round(entry + risk, 8)
+    tps = [round(entry - risk * r, 8) for r in (1.618, 2.0, 2.618)]
+    return {"entry": entry, "sl": sl, "tp1": tps[0], "tp2": tps[1], "tp3": tps[2], "risk_reward": "1 : 1.62~2.62"}
 
 
 def _format_price(p: float) -> str:
@@ -732,6 +764,11 @@ def run_focused_analysis(interval: str = "4h", lookback: int = 110, top_n: int =
 
         long_levels = compute_levels(current, recent_low, recent_high, "long")
         short_levels = compute_levels(current, recent_low, recent_high, "short")
+        if long_levels["entry"] == short_levels["entry"]:
+            pad_low = round(current * 0.97, 8)
+            pad_high = round(current * 1.03, 8)
+            long_levels = compute_levels(current, pad_low, pad_high, "long")
+            short_levels = compute_levels(current, pad_low, pad_high, "short")
 
         # 직관적 점수 + 멀티 TF 보정
         bull_s = bull["score"]

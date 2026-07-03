@@ -34,13 +34,16 @@ else:
 if str(_MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(_MODULE_DIR))
 
+import 엘리어트_지정종목_분석 as _analyzer  # noqa: E402
+
 from 엘리어트_지정종목_분석 import (  # noqa: E402
     DEFAULT_TOP_N,
     fetch_klines,
     get_top_volume_coins,
-    run_focused_analysis,
     save_reports,
 )
+
+ANALYZER_MODULE_PATH = str(_MODULE_DIR / "엘리어트_지정종목_분석.py")
 
 RESULTS_DIR = (_RESULTS_BASE if _RESULTS_BASE.exists() else _MODULE_DIR) / "지정종목_엘리어트분석"
 
@@ -81,8 +84,18 @@ def save_scan_history(payload: Dict) -> Optional[Path]:
     return path
 
 
+def _reload_analyzer():
+    """코드 수정 후 app.py 재시작 없이도 최신 분석 로직을 쓰도록 모듈 리로드."""
+    import importlib
+
+    importlib.reload(_analyzer)
+    return _analyzer.run_focused_analysis
+
+
 def run_analysis(interval: str = "4h", lookback: int = 110, top_n: int = DEFAULT_TOP_N, save: bool = True) -> Dict:
-    results = run_focused_analysis(interval=interval, lookback=lookback, top_n=top_n)
+    run_focused = _reload_analyzer()
+    print(f"[analyzer] {ANALYZER_MODULE_PATH}")
+    results = run_focused(interval=interval, lookback=lookback, top_n=top_n)
     saved_path = None
 
     payload = {

@@ -1,98 +1,81 @@
 {
-  "generated_at": "2026-06-14T09:11:30.262612+00:00",
+  "generated_at": "2026-06-23T03:51:54.625820+00:00",
   "candidates": [
     {
-      "symbol": "CHIPUSDT",
-      "score": 66,
-      "wave": "Wave 3 in progress / starting",
+      "symbol": "BREVUSDT",
+      "score": 91,
+      "wave": "Wave 3 진행 또는 시작",
       "reasons": [
-        "Strong HH + HL structure",
-        "Break of prior high (age=5 bars)",
-        "Volume surge on impulse",
-        "Recent acceleration"
+        "유효 Wave 2 조정 54.5% (38.2-78.6% 규칙 준수)",
+        "이상적 50-61.8% 조정 ( alternation & Fib 우수)",
+        "Wave 1 고점 돌파 확인 (Wave 3 impulse 시작 신호)",
+        "강한 돌파 (>1.5%)"
       ],
-      "price": 0.03555,
-      "volume_24h": 6380575.80826,
-      "rsi": 65.18181818181816,
-      "entry": 0.03555,
-      "tp": 0.04288321,
-      "sl": 0.0297849,
+      "price": 0.0835,
+      "volume_24h": 3383651.2037,
+      "rsi": 59.0717299578059,
+      "entry": 0.0835,
+      "tp": 0.09405824,
+      "sl": 0.0751995,
       "meta": {
-        "breakout_age_bars": 99
+        "wave1_size_pct": 5.7,
+        "wave2_retr_pct": 54.5,
+        "breakout_from_w1_high_pct": 3.1
       }
     },
     {
-      "symbol": "SOLUSDT",
-      "score": 58,
-      "wave": "Impulse Setup",
+      "symbol": "ENSOUSDT",
+      "score": 85,
+      "wave": "Wave 3 진행 또는 시작",
       "reasons": [
-        "Strong HH + HL structure",
-        "Good Wave 2-style retrace 58.0%",
-        "Break of prior high (age=11 bars)",
-        "RSI 60 healthy"
+        "유효 Wave 2 조정 68.4% (38.2-78.6% 규칙 준수)",
+        "Wave 1 고점 돌파 확인 (Wave 3 impulse 시작 신호)",
+        "강한 돌파 (>1.5%)",
+        "Wave 3 leg이 Wave 1보다 강함 (이론적 강세)"
       ],
-      "price": 68.19,
-      "volume_24h": 110322118.68666,
-      "rsi": 59.96533795493927,
-      "entry": 68.19,
-      "tp": 76.97924016,
-      "sl": 61.28022,
+      "price": 0.682,
+      "volume_24h": 4030347.70625,
+      "rsi": 67.59776536312849,
+      "entry": 0.682,
+      "tp": 0.8255363,
+      "sl": 0.569157,
       "meta": {
-        "leg_pct": 6.0,
-        "breakout_age_bars": 99
+        "wave1_size_pct": 9.8,
+        "wave2_retr_pct": 68.4,
+        "breakout_from_w1_high_pct": 6.7
       }
     },
     {
-      "symbol": "ZKPUSDT",
-      "score": 58,
-      "wave": "Impulse Setup",
+      "symbol": "TIAUSDT",
+      "score": 78,
+      "wave": "Wave 3 진행 또는 시작",
       "reasons": [
-        "Strong HH + HL structure",
-        "Good Wave 2-style retrace 55.4%",
-        "Break of prior high (age=17 bars)",
-        "Recent acceleration"
+        "유효 Wave 2 조정 74.7% (38.2-78.6% 규칙 준수)",
+        "Wave 1 고점 돌파 확인 (Wave 3 impulse 시작 신호)",
+        "강한 돌파 (>1.5%)",
+        "Wave 3 leg이 Wave 1보다 강함 (이론적 강세)"
       ],
-      "price": 0.0628,
-      "volume_24h": 4790146.94395,
-      "rsi": 70.73170731707319,
-      "entry": 0.0628,
-      "tp": 0.07953761,
-      "sl": 0.0496415,
+      "price": 0.4002,
+      "volume_24h": 6619558.039971,
+      "rsi": 65.93647316538883,
+      "entry": 0.4002,
+      "tp": 0.45786866,
+      "sl": 0.354863,
       "meta": {
-        "leg_pct": 16.5,
-        "breakout_age_bars": 99
-      }
-    },
-    {
-      "symbol": "TAOUSDT",
-      "score": 55,
-      "wave": "Impulse Setup",
-      "reasons": [
-        "Strong HH + HL structure",
-        "Good Wave 2-style retrace 51.7%",
-        "Break of prior high (age=14 bars)",
-        "Recent acceleration"
-      ],
-      "price": 265.8,
-      "volume_24h": 94605987.29072,
-      "rsi": 75.24461839530332,
-      "entry": 265.8,
-      "tp": 356.6982648,
-      "sl": 194.3391,
-      "meta": {
-        "leg_pct": 25.9,
-        "breakout_age_bars": 99
+        "wave1_size_pct": 6.2,
+        "wave2_retr_pct": 74.7,
+        "breakout_from_w1_high_pct": 1.7
       }
     },
     {
       "symbol": "UTKUSDT",
-      "score": 55,
-      "wave": "Impulse Setup",
+      "score": 77,
+      "wave": "Wave 3 진행 또는 시작",
       "reasons": [
-        "Strong HH + HL structure",
-        "Good Wave 2-style retrace 70.0%",
-        "Recent acceleration",
-        "RSI 53 healthy"
+        "유효 Wave 2 조정 74.1% (38.2-78.6% 규칙 준수)",
+        "Wave 1 고점 돌파 확인 (Wave 3 impulse 시작 신호)",
+        "강한 돌파 (>1.5%)",
+        "Wave 3 leg이 Wave 1보다 강함 (이론적 강세)"
       ],
       "price": 0.00795,
       "volume_24h": 10207948.62723,
@@ -101,50 +84,31 @@
       "tp": 0.010085,
       "sl": 0.00627154,
       "meta": {
-        "leg_pct": 16.7,
-        "breakout_age_bars": 99
+        "wave1_size_pct": 8.2,
+        "wave2_retr_pct": 74.1,
+        "breakout_from_w1_high_pct": 12.1
       }
     },
     {
-      "symbol": "FETUSDT",
-      "score": 52,
-      "wave": "Impulse Setup",
+      "symbol": "POLUSDT",
+      "score": 73,
+      "wave": "Wave 3 진행 또는 시작",
       "reasons": [
-        "Good HH + HL structure",
-        "Good Wave 2-style retrace 48.4%",
-        "Break of prior high (age=16 bars)",
-        "RSI 68 healthy"
+        "유효 Wave 2 조정 66.6% (38.2-78.6% 규칙 준수)",
+        "Wave 1 고점 돌파 확인 (Wave 3 impulse 시작 신호)",
+        "Wave 3 leg이 Wave 1보다 강함 (이론적 강세)",
+        "RSI 44 (양호한 impulse 시작 구간)"
       ],
-      "price": 0.2107,
-      "volume_24h": 22943772.74647,
-      "rsi": 68.32669322709165,
-      "entry": 0.2107,
-      "tp": 0.25064182,
-      "sl": 0.1792992,
+      "price": 0.07916,
+      "volume_24h": 3531406.026829,
+      "rsi": 43.93656716417909,
+      "entry": 0.07916,
+      "tp": 0.08364759,
+      "sl": 0.07563202,
       "meta": {
-        "leg_pct": 11.8,
-        "breakout_age_bars": 99
-      }
-    },
-    {
-      "symbol": "LTCUSDT",
-      "score": 52,
-      "wave": "Impulse Setup",
-      "reasons": [
-        "Good HH + HL structure",
-        "Good Wave 2-style retrace 40.9%",
-        "Break of prior high (age=23 bars)",
-        "Strong breakout candle"
-      ],
-      "price": 44.21,
-      "volume_24h": 10236069.26212,
-      "rsi": 73.2732732732734,
-      "entry": 44.21,
-      "tp": 48.86711,
-      "sl": 40.54875,
-      "meta": {
-        "leg_pct": 5.3,
-        "breakout_age_bars": 99
+        "wave1_size_pct": 4.0,
+        "wave2_retr_pct": 66.6,
+        "breakout_from_w1_high_pct": 1.3
       }
     }
   ],
