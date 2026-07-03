@@ -1,22 +1,18 @@
 # Elliott Wave Scanner
 
-바이낸스 USDT 마켓 거래량 상위 코인을 대상으로, 엘리어트 파동 impulse(특히 Wave 3 후보)를 훑어보는 스캐너입니다.  
-매일 차트 직접 돌려보면서 후보 찾기가 번거로워서 만들었고, 결과는 웹에서 바로 확인할 수 있게 해뒀습니다.
+**바로 보기 → [https://elliott-focused-viewer-production.up.railway.app/](https://elliott-focused-viewer-production.up.railway.app/)**
 
-## 웹 뷰어
+바이낸스 USDT 거래량 상위 코인에서 엘리어트 파동 impulse(Wave 3 후보)를 찾아주는 스캐너입니다.  
+4시간마다 자동 분석되고, 위 링크에서 최신 결과를 확인할 수 있습니다.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JimProKing/elliott-wave-scanner)
+## 기능
 
-Render에 배포하면 `focused_viewer` 앱이 올라갑니다. 버튼 누르고 로그인한 뒤 **Apply** 한 번이면 끝입니다.  
-배포 후 URL 예: `https://elliott-focused-viewer.onrender.com`
-
-**하는 일**
-- 거래량 상위 20종목 분석 (풀 스캐너는 상위 100종목)
+- 거래량 상위 20종목 실시간 뷰어 (풀 스캔은 상위 100종목)
 - 롱/숏 양방향 점수, 진입·손절·TP 레벨
-- 최근 3일 1h 차트에 레벨선 표시
-- GitHub Actions가 4시간마다 분석 후 `focused_viewer/data/latest.json` 갱신
+- 최근 3일 1h 차트 + 레벨선·가격 패널
+- GitHub Actions 자동 갱신 (`focused_viewer/data/latest.json`)
 
-## 로컬 실행
+## 로컬에서 실행
 
 ```bash
 cd focused_viewer
@@ -24,32 +20,31 @@ pip install -r requirements-web.txt
 python app.py
 ```
 
-브라우저에서 `http://127.0.0.1:5789` 로 접속합니다.
+→ `http://127.0.0.1:5789`
 
-## 저장소 구성
+## 프로젝트 구조
 
-| 경로 | 설명 |
+| 폴더 | 역할 |
 |------|------|
-| `focused_viewer/` | 웹 뷰어 (Flask) — Render 배포 대상 |
-| `elliott_wave_scanner.py` | 거래량 상위 100종목 풀 스캔 |
-| `results/` | 풀 스캔 결과 (`latest.json`, `latest.md`) |
-| `web/` | GitHub Pages용 간단한 결과 뷰어 |
+| `focused_viewer/` | 웹 뷰어 (Railway / Render 배포) |
+| `elliott_wave_scanner.py` | 100종목 풀 스캔 |
+| `results/` | 풀 스캔 결과 |
+| `web/` | GitHub Pages용 간단 뷰어 |
 
-배포 상세는 [`focused_viewer/DEPLOY.md`](focused_viewer/DEPLOY.md) 참고.
+배포 가이드: [`focused_viewer/DEPLOY.md`](focused_viewer/DEPLOY.md)
 
-## 직접 포크해서 쓰려면
+## 직접 배포하기
 
-1. 저장소 fork 또는 clone
-2. GitHub Actions 권한: Settings → Actions → **Read and write permissions**
-3. Actions 탭에서 **Focused Coin Scan** 워크플로우 수동 실행
-4. `web/index.html`의 `GITHUB_USER`, `REPO`를 본인 계정으로 수정 (Pages 뷰어 쓸 때)
-5. GitHub Pages 켜기 (Settings → Pages → GitHub Actions)
+1. Fork 후 clone
+2. Actions 권한: Settings → Actions → **Read and write permissions**
+3. **Focused Coin Scan** 워크플로우 수동 실행
+4. Railway 또는 Render에 `focused_viewer` 배포
 
-스캔 주기는 `.github/workflows/focused-scan.yml`의 cron, 종목 수는 `elliott_wave_scanner.py`의 `usdt_pairs[:100]`에서 조정할 수 있습니다.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JimProKing/elliott-wave-scanner)
 
 ## 참고
 
-- 공개 Binance API만 사용합니다. API 키 필요 없음.
-- 규칙 기반 휴리스틱 도구이며, 투자 조언이 아닙니다. 실제 매매 전에는 본인 차트 분석과 리스크 관리가 필요합니다.
+- Binance 공개 API만 사용 (API 키 불필요)
+- 투자 조언이 아닌 참고용 도구입니다
 
-문의: [GitHub Issues](https://github.com/JimProKing/elliott-wave-scanner/issues) · caramel112 (카카오톡) · caramel2516@naver.com
+문의 · [Issues](https://github.com/JimProKing/elliott-wave-scanner/issues) · 카카오톡 caramel112 · caramel2516@naver.com
